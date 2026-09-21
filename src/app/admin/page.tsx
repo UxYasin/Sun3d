@@ -89,6 +89,11 @@ function AdminMain() {
 
   useEffect(() => {
     reloadData();
+    OrderStoreService.syncWithServer().then(() => reloadData());
+
+    const handleSync = () => reloadData();
+    window.addEventListener('sun3d_store_synced', handleSync);
+    return () => window.removeEventListener('sun3d_store_synced', handleSync);
   }, [user]);
 
   // If user is not admin, show guard screen

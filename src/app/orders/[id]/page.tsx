@@ -34,6 +34,14 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     if (found) {
       setOrder(found);
     }
+    fetch(`/api/orders/${encodeURIComponent(resolvedParams.id)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.order) {
+          setOrder(data.order);
+        }
+      })
+      .catch(() => {});
   }, [resolvedParams.id]);
 
   if (isLoading) {

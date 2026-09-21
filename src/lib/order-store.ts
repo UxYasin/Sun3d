@@ -41,7 +41,70 @@ export const DEFAULT_BUSINESS_SETTINGS: BusinessSettings = {
   workshopAddress: 'Tejgaon Industrial Area, Dhaka-1208, Bangladesh'
 };
 
+let syncInitialized = false;
+
 export class OrderStoreService {
+  // --- SYNC WITH SUPABASE BACKEND ---
+  static async syncWithServer(): Promise<void> {
+    if (typeof window === 'undefined') return;
+
+    try {
+      // 1. Sync Templates from Supabase
+      const tplRes = await fetch('/api/templates').catch(() => null);
+      if (tplRes && tplRes.ok) {
+        const data = await tplRes.json();
+        if (data.success && Array.isArray(data.templates) && data.templates.length > 0) {
+          localStorage.setItem(STORAGE_KEYS.ADMIN_TEMPLATES, JSON.stringify(data.templates));
+        }
+      }
+
+      // 2. Sync Settings from Supabase
+      const setRes = await fetch('/api/settings').catch(() => null);
+      if (setRes && setRes.ok) {
+        const data = await setRes.json();
+        if (data.success) {
+          if (data.paymentSettings) {
+            localStorage.setItem(STORAGE_KEYS.PAYMENT_SETTINGS, JSON.stringify(data.paymentSettings));
+          }
+          if (data.businessSettings) {
+            localStorage.setItem(STORAGE_KEYS.BUSINESS_SETTINGS, JSON.stringify(data.businessSettings));
+          }
+        }
+      }
+
+      // 3. Sync Orders from Supabase
+      const ordRes = await fetch('/api/orders').catch(() => null);
+      if (ordRes && ordRes.ok) {
+        const data = await ordRes.json();
+        if (data.success && Array.isArray(data.orders)) {
+          // Merge remote orders with existing local-only orders
+          const localOrders = this.getOrders();
+          const remoteOrderIds = new Set(data.orders.map((o: CustomerOrder) => o.id || o.orderNumber));
+          const localOnly = localOrders.filter((o) => !remoteOrderIds.has(o.id) && !remoteOrderIds.has(o.orderNumber));
+          const merged = [...data.orders, ...localOnly];
+          localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(merged));
+        }
+      }
+
+      // 4. Sync Designs from Supabase
+      const desRes = await fetch('/api/designs').catch(() => null);
+      if (desRes && desRes.ok) {
+        const data = await desRes.json();
+        if (data.success && Array.isArray(data.designs) && data.designs.length > 0) {
+          const localDesigns = this.getDesigns();
+          const remoteDesignIds = new Set(data.designs.map((d: CustomerDesign) => d.id));
+          const localOnly = localDesigns.filter((d) => !remoteDesignIds.has(d.id));
+          const merged = [...data.designs, ...localOnly];
+          localStorage.setItem(STORAGE_KEYS.DESIGNS, JSON.stringify(merged));
+        }
+      }
+
+      window.dispatchEvent(new CustomEvent('sun3d_store_synced'));
+    } catch (err) {
+      console.warn('Sync with Supabase skipped or encountered network issue:', err);
+    }
+  }
+
   // --- DESIGNS ---
   static getDesigns(): CustomerDesign[] {
     if (typeof window === 'undefined') return INITIAL_MOCK_DESIGNS;
@@ -83,6 +146,13 @@ export class OrderStoreService {
 
     if (typeof window !== 'undefined') {
       localStorage.setItem(STORAGE_KEYS.DESIGNS, JSON.stringify(designs));
+
+      // Asynchronously persist to Supabase
+      fetch('/api/designs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(design)
+      }).catch((e) => console.warn('Background Supabase saveDesign error:', e));
     }
     return design;
   }
@@ -159,6 +229,35 @@ export class OrderStoreService {
 
     if (typeof window !== 'undefined') {
       localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(orders));
+
+      // Asynchronously post to Supabase database
+      fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerId: params.customerId,
+          customerName: params.customerName,
+          customerEmail: params.customerEmail,
+          customerPhone: params.customerPhone,
+          finalDesignData: params.finalDesignData,
+          price: params.price,
+          paymentMethod: params.paymentMethod || 'bKash'
+        })
+      })
+        .then(async (res) => {
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.order) {
+              const currentOrders = OrderStoreService.getOrders();
+              const idx = currentOrders.findIndex((o) => o.id === orderId || o.orderNumber === orderNumber);
+              if (idx !== -1) {
+                currentOrders[idx] = { ...currentOrders[idx], id: data.order.id, orderNumber: data.order.orderNumber };
+                localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(currentOrders));
+              }
+            }
+          }
+        })
+        .catch((e) => console.warn('Background Supabase createOrder error:', e));
     }
     return newOrder;
   }
@@ -197,6 +296,20 @@ export class OrderStoreService {
     orders[orderIndex] = updated;
     if (typeof window !== 'undefined') {
       localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(orders));
+
+      // Asynchronously update Supabase database
+      fetch(`/api/orders/${encodeURIComponent(params.orderId)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paymentStatus: 'submitted',
+          productionStatus: 'Payment Pending',
+          transactionId: params.transactionId,
+          senderPhone: params.senderPhone,
+          paymentNote: params.paymentNote,
+          historyNote: `Payment submitted via ${params.paymentMethod} (TrxID: ${params.transactionId})`
+        })
+      }).catch((e) => console.warn('Background Supabase submitOrderPayment error:', e));
     }
     return updated;
   }
@@ -224,6 +337,16 @@ export class OrderStoreService {
     orders[orderIndex] = updated;
     if (typeof window !== 'undefined') {
       localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(orders));
+
+      // Update Supabase
+      fetch(`/api/orders/${encodeURIComponent(orderId)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productionStatus: status,
+          historyNote: note || `Admin updated production to ${status}`
+        })
+      }).catch((e) => console.warn('Background Supabase updateProduction error:', e));
     }
     return updated;
   }
@@ -254,6 +377,17 @@ export class OrderStoreService {
     orders[orderIndex] = updated;
     if (typeof window !== 'undefined') {
       localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(orders));
+
+      // Update Supabase
+      fetch(`/api/orders/${encodeURIComponent(orderId)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paymentStatus: status,
+          productionStatus: nextProdStatus,
+          historyNote: `Admin marked payment as "${status}". Production status is "${nextProdStatus}".`
+        })
+      }).catch((e) => console.warn('Background Supabase updatePayment error:', e));
     }
     return updated;
   }
@@ -312,9 +446,19 @@ export class OrderStoreService {
 
   static toggleTemplateEnabled(templateId: string): Template[] {
     const tpls = this.getAdminTemplates();
-    const updated = tpls.map((t) => (t.id === templateId ? { ...t, enabled: t.enabled === false ? true : false } : t));
+    const target = tpls.find((t) => t.id === templateId);
+    const newEnabled = target ? (target.enabled === false ? true : false) : true;
+    const updated = tpls.map((t) => (t.id === templateId ? { ...t, enabled: newEnabled } : t));
+
     if (typeof window !== 'undefined') {
       localStorage.setItem(STORAGE_KEYS.ADMIN_TEMPLATES, JSON.stringify(updated));
+
+      // Asynchronously update Supabase
+      fetch(`/api/templates/${encodeURIComponent(templateId)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: newEnabled })
+      }).catch((e) => console.warn('Background Supabase toggleTemplateEnabled error:', e));
     }
     return updated;
   }
@@ -324,6 +468,13 @@ export class OrderStoreService {
     const updated = tpls.map((t) => (t.id === templateId ? { ...t, ...updates } : t));
     if (typeof window !== 'undefined') {
       localStorage.setItem(STORAGE_KEYS.ADMIN_TEMPLATES, JSON.stringify(updated));
+
+      // Asynchronously update Supabase
+      fetch(`/api/templates/${encodeURIComponent(templateId)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      }).catch((e) => console.warn('Background Supabase updateTemplate error:', e));
     }
     return updated;
   }
@@ -346,6 +497,13 @@ export class OrderStoreService {
   static updatePaymentSettings(settings: PaymentSettings): PaymentSettings {
     if (typeof window !== 'undefined') {
       localStorage.setItem(STORAGE_KEYS.PAYMENT_SETTINGS, JSON.stringify(settings));
+
+      // Asynchronously update Supabase
+      fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'payment', paymentSettings: settings })
+      }).catch((e) => console.warn('Background Supabase updatePaymentSettings error:', e));
     }
     return settings;
   }
@@ -368,7 +526,22 @@ export class OrderStoreService {
   static updateBusinessSettings(settings: BusinessSettings): BusinessSettings {
     if (typeof window !== 'undefined') {
       localStorage.setItem(STORAGE_KEYS.BUSINESS_SETTINGS, JSON.stringify(settings));
+
+      // Asynchronously update Supabase
+      fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'business', businessSettings: settings })
+      }).catch((e) => console.warn('Background Supabase updateBusinessSettings error:', e));
     }
     return settings;
   }
+}
+
+// Automatically initiate a one-time sync in browser environment
+if (typeof window !== 'undefined' && !syncInitialized) {
+  syncInitialized = true;
+  setTimeout(() => {
+    OrderStoreService.syncWithServer();
+  }, 100);
 }

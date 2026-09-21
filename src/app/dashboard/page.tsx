@@ -25,8 +25,16 @@ function DashboardContent() {
     if (!isLoading && !user) {
       router.push('/login?redirect=/dashboard');
     } else if (user) {
-      setDesigns(OrderStoreService.getUserDesigns(user.id));
-      setOrders(OrderStoreService.getUserOrders(user.id));
+      const loadUserContent = () => {
+        setDesigns(OrderStoreService.getUserDesigns(user.id));
+        setOrders(OrderStoreService.getUserOrders(user.id));
+      };
+      loadUserContent();
+      OrderStoreService.syncWithServer().then(loadUserContent);
+
+      const handleSync = () => loadUserContent();
+      window.addEventListener('sun3d_store_synced', handleSync);
+      return () => window.removeEventListener('sun3d_store_synced', handleSync);
     }
   }, [user, isLoading, router]);
 
