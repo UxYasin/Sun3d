@@ -1,0 +1,114 @@
+@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #0f1015;
+  --canva-purple: #8b3dff;
+  --canva-purple-hover: #772ce8;
+  --canva-gradient-start: #7d2ae8;
+  --canva-gradient-end: #00c4cc;
+  --canva-secondary: #ff6105;
+  --canva-dark: #0f1015;
+  --canva-border: #f0f0f5;
+  --canva-border-subtle: #e5e7eb;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-canva-purple: var(--canva-purple);
+  --color-canva-secondary: var(--canva-secondary);
+  --color-canva-dark: var(--canva-dark);
+  --font-sans: var(--font-hind-siliguri), var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono);
+}
+
+/* Zero muddy drop shadows - Canva crisp flat styling */
+.canva-flat-card {
+  background-color: #ffffff;
+  border: 1px solid var(--canva-border-subtle);
+  border-radius: 20px;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.canva-flat-card:hover {
+  border-color: #d1d5db;
+}
+
+/* Canva Gradient Hero */
+.canva-hero-gradient {
+  background: linear-gradient(180deg, #7425e4 0%, #5623cf 45%, #00b4d8 90%, #90e0ef 100%);
+}
+
+/* Canva Buttons */
+.btn-canva-pill {
+  border-radius: 9999px;
+  padding: 10px 24px;
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.btn-canva-primary {
+  background-color: #8b3dff;
+  color: #ffffff;
+  border: 1px solid transparent;
+}
+
+.btn-canva-primary:hover {
+  background-color: #772ce8;
+}
+
+.btn-canva-white {
+  background-color: #ffffff;
+  color: #0f1015;
+  border: 1px solid transparent;
+}
+
+.btn-canva-white:hover {
+  background-color: #f8f9fa;
+  transform: translateY(-1px);
+}
+
+.btn-canva-outline {
+  background-color: transparent;
+  color: #0f1015;
+  border: 1px solid #d1d5db;
+}
+
+.btn-canva-outline:hover {
+  border-color: #8b3dff;
+  color: #8b3dff;
+  background-color: #faf5ff;
+}
+
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(1deg);
+  }
+}
+
+.animate-float {
+  animation: floatSlow 4s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: floatSlow 5s ease-in-out 1.5s infinite;
+}
+
+/* Hide scrollbars */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
