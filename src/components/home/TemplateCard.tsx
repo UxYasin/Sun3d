@@ -10,7 +10,7 @@ interface TemplateCardProps {
 }
 
 export function TemplateCard({ template, onSelect }: TemplateCardProps) {
-  const [activeSize, setActiveSize] = useState<NameplateSize>(template.supportedSizes[0] || '5:3');
+  const [activeSize, setActiveSize] = useState<NameplateSize>(template.supportedSizes[0] || '2:1');
 
   const handleSizeClick = (e: React.MouseEvent, size: NameplateSize) => {
     e.stopPropagation();
@@ -24,7 +24,7 @@ export function TemplateCard({ template, onSelect }: TemplateCardProps) {
   return (
     <div
       onClick={handleCardClick}
-      className="group relative flex flex-col justify-between rounded-[20px] bg-white border border-neutral-200 hover:border-[#8b3dff] transition-all cursor-pointer overflow-hidden"
+      className="group relative flex flex-col justify-between rounded-[20px] bg-white border border-neutral-200 hover:border-[#0073ff] transition-all cursor-pointer overflow-hidden"
     >
       {/* Top Preview Canvas (Zero drop shadow, clean surface) */}
       <div className="relative p-5 bg-[#f8f9fa] border-b border-neutral-100 flex items-center justify-center min-h-[220px]">
@@ -38,7 +38,7 @@ export function TemplateCard({ template, onSelect }: TemplateCardProps) {
         {/* Badge on Top Left */}
         {template.badge && (
           <div className="absolute top-3 left-3 z-10">
-            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#8b3dff] text-white">
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#0073ff] text-white">
               {template.badge}
             </span>
           </div>
@@ -68,7 +68,7 @@ export function TemplateCard({ template, onSelect }: TemplateCardProps) {
       {/* Card Info */}
       <div className="p-5 flex flex-col flex-1 justify-between">
         <div>
-          <h3 className="font-bold text-base sm:text-lg text-neutral-950 group-hover:text-[#8b3dff] transition-colors leading-snug">
+          <h3 className="font-bold text-base sm:text-lg text-neutral-950 group-hover:text-[#0073ff] transition-colors leading-snug">
             {template.name}
           </h3>
 
@@ -101,7 +101,7 @@ export function TemplateCard({ template, onSelect }: TemplateCardProps) {
                 onClick={(e) => handleSizeClick(e, size)}
                 className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${
                   activeSize === size
-                    ? 'bg-[#8b3dff] text-white'
+                    ? 'bg-[#0073ff] text-white'
                     : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
                 }`}
               >
@@ -114,7 +114,7 @@ export function TemplateCard({ template, onSelect }: TemplateCardProps) {
           <div className="mt-4">
             <button
               type="button"
-              className="w-full py-2.5 rounded-full text-xs sm:text-sm font-bold bg-neutral-100 text-neutral-900 group-hover:bg-[#8b3dff] group-hover:text-white transition-all cursor-pointer"
+              className="w-full py-2.5 rounded-full text-xs sm:text-sm font-bold bg-neutral-100 text-neutral-900 group-hover:bg-[#0073ff] group-hover:text-white transition-all cursor-pointer"
             >
               কাস্টমাইজ করুন
             </button>

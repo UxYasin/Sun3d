@@ -60,7 +60,7 @@ export function TemplateGallery({ onStartCustomization }: TemplateGalleryProps) 
 
   const handleStartDesigningFast = () => {
     const defaultTemplate = MOCK_TEMPLATES[0];
-    onStartCustomization(defaultTemplate, '4:2');
+    onStartCustomization(defaultTemplate, '2:1');
   };
 
   return (
@@ -102,7 +102,7 @@ export function TemplateGallery({ onStartCustomization }: TemplateGalleryProps) 
                 onClick={() => setSelectedCategory(cat.id)}
                 className={`px-4 py-2 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all cursor-pointer ${
                   selectedCategory === cat.id
-                    ? 'bg-[#8b3dff] text-white'
+                    ? 'bg-[#0073ff] text-white'
                     : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
                 }`}
               >
@@ -119,7 +119,7 @@ export function TemplateGallery({ onStartCustomization }: TemplateGalleryProps) 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="টেমপ্লেট খুঁজুন (কাঠ, এক্রিলিক, মার্বেল)..."
-              className="w-full pl-10 pr-4 py-2 bg-neutral-50 border border-neutral-200 rounded-full text-xs sm:text-sm text-neutral-900 focus:outline-none focus:border-[#8b3dff]"
+              className="w-full pl-10 pr-4 py-2 bg-neutral-50 border border-neutral-200 rounded-full text-xs sm:text-sm text-neutral-900 focus:outline-none focus:border-[#0073ff]"
             />
           </div>
         </div>
@@ -127,7 +127,7 @@ export function TemplateGallery({ onStartCustomization }: TemplateGalleryProps) 
         {/* Ratio Selector Filter Pills */}
         <div className="mt-4 flex items-center gap-2 text-xs text-neutral-600">
           <span className="font-semibold text-neutral-900">অনুপাত / রেশিও ফিল্টার:</span>
-          {['All', '5:3', '4:2', '4:3'].map((size) => (
+          {['All', '2:1', '1:1', '4:1'].map((size) => (
             <button
               key={size}
               onClick={() => setSelectedSizeFilter(size)}
@@ -166,7 +166,7 @@ export function TemplateGallery({ onStartCustomization }: TemplateGalleryProps) 
                 setSelectedCategory('All');
                 setSelectedSizeFilter('All');
               }}
-              className="mt-4 px-4 py-2 rounded-full text-xs font-semibold bg-[#8b3dff] text-white cursor-pointer"
+              className="mt-4 px-4 py-2 rounded-full text-xs font-semibold bg-[#0073ff] text-white cursor-pointer"
             >
               ফিল্টার রিসেট করুন
             </button>

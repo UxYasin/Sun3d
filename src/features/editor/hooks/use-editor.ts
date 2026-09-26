@@ -34,6 +34,12 @@ import { useCanvasEvents } from "@/features/editor/hooks/use-canvas-events";
 import { useWindowEvents } from "@/features/editor/hooks/use-window-events";
 import { useLoadState } from "@/features/editor/hooks/use-load-state";
 import { hasBanglaUnicode, isSutonnyFont, isBanglaFont, isBijoyText, unicodeToBijoy } from "@/features/editor/bangla-converter";
+import {
+  DEFAULT_BEVEL_EMBOSS,
+  applyBevelEmboss,
+  installBevelEmbossRenderer,
+  normalizeBevelConfig,
+} from "@/features/editor/bevel-emboss";
 
 const buildEditor = ({
   save,
@@ -266,40 +272,16 @@ const buildEditor = ({
 
       const isBangla = isSutonnyFont(chosenFont) || hasBanglaUnicode(value);
 
-      // Default Bevel & Emboss shadow for Bangla text:
-      // Depth 215%, Size 10px, angle 90 deg, highlight screen, shadow multiply
-      const defaultShadow = isBangla
-        ? new fabric.Shadow({
-            color: "rgba(0, 0, 0, 0.45)",
-            blur: 5,
-            offsetX: 2,
-            offsetY: 4,
-          })
-        : undefined;
-
       const object = new fabric.Textbox(textValue, {
         ...TEXT_OPTIONS,
         fontFamily: chosenFont,
         fill: fillColor,
-        shadow: defaultShadow,
         ...options,
       });
 
       if (isBangla) {
-        (object as any).bevelEmbossConfig = {
-          enabled: true,
-          style: "inner-bevel",
-          technique: "smooth",
-          depth: 215,
-          size: 10,
-          soften: 1,
-          angle: 90,
-          altitude: 30,
-          highlightColor: "#ffffff",
-          highlightOpacity: 0.5,
-          shadowColor: "#000000",
-          shadowOpacity: 0.5,
-        };
+        // Bevel & Emboss shades the glyphs itself, so no fabric drop shadow.
+        (object as any).bevelEmbossConfig = { ...DEFAULT_BEVEL_EMBOSS };
       }
 
       if (hasBanglaUnicode(value)) {
@@ -309,72 +291,33 @@ const buildEditor = ({
       const hasExplicitPosition = options?.top !== undefined || options?.left !== undefined;
       addToCanvas(object, { skipCenter: hasExplicitPosition });
     },
-    changeBevelEmboss: (config: Partial<BevelEmbossConfig>) => {
+    // `commit` false = live preview only (no history step / save), so dragging
+    // a slider repaints the canvas without flooding the undo stack.
+    changeBevelEmboss: (
+      config: Partial<BevelEmbossConfig>,
+      commit = true
+    ) => {
       canvas.getActiveObjects().forEach((object) => {
-        const currentConfig = (object as any).bevelEmbossConfig || {
-          enabled: true,
-          style: "inner-bevel",
-          technique: "smooth",
-          depth: 215,
-          size: 10,
-          soften: 1,
-          angle: 90,
-          altitude: 30,
-          highlightColor: "#ffffff",
-          highlightOpacity: 0.5,
-          shadowColor: "#000000",
-          shadowOpacity: 0.5,
+        // Images and groups cannot provide a usable alpha mask for the bevel.
+        if (object.type === "image" || object.type === "group") return;
+
+        const currentConfig = {
+          ...DEFAULT_BEVEL_EMBOSS,
+          ...((object as any).bevelEmbossConfig || {}),
         };
 
-        const merged: BevelEmbossConfig = { ...currentConfig, ...config };
-        (object as any).bevelEmbossConfig = merged;
-
-        if (!merged.enabled) {
-          object.set({ shadow: undefined });
-        } else {
-          // Calculate shadow offset from angle and size
-          const rad = (merged.angle * Math.PI) / 180;
-          const dist = Math.max(1, (merged.size * merged.depth) / 150);
-          const offsetX = Math.round(Math.cos(rad) * dist);
-          const offsetY = Math.round(Math.sin(rad) * dist);
-          const blur = Math.max(1, merged.soften * 3);
-
-          const r = parseInt(merged.shadowColor.slice(1, 3) || "0", 16) || 0;
-          const g = parseInt(merged.shadowColor.slice(3, 5) || "0", 16) || 0;
-          const b = parseInt(merged.shadowColor.slice(5, 7) || "0", 16) || 0;
-
-          object.set({
-            shadow: new fabric.Shadow({
-              color: `rgba(${r}, ${g}, ${b}, ${merged.shadowOpacity})`,
-              blur: blur,
-              offsetX: offsetX,
-              offsetY: offsetY,
-            }),
-          });
-        }
+        applyBevelEmboss(object, { ...currentConfig, ...config });
       });
       canvas.renderAll();
-      save();
+      if (commit) save();
     },
     getActiveBevelEmboss: (): BevelEmbossConfig => {
       const selectedObject = selectedObjects[0];
-      if (!selectedObject || !(selectedObject as any).bevelEmbossConfig) {
-        return {
-          enabled: false,
-          style: "inner-bevel",
-          technique: "smooth",
-          depth: 215,
-          size: 10,
-          soften: 1,
-          angle: 90,
-          altitude: 30,
-          highlightColor: "#ffffff",
-          highlightOpacity: 0.5,
-          shadowColor: "#000000",
-          shadowOpacity: 0.5,
-        };
+      const stored = (selectedObject as any)?.bevelEmbossConfig;
+      if (!stored) {
+        return { ...DEFAULT_BEVEL_EMBOSS, enabled: false };
       }
-      return (selectedObject as any).bevelEmbossConfig;
+      return normalizeBevelConfig(stored);
     },
     getActiveOpacity: () => {
       const selectedObject = selectedObjects[0];
@@ -593,28 +536,7 @@ const buildEditor = ({
 
           // Auto-apply Bevel & Emboss to Bangla fonts if not already defined
           if (isSutonnyFont(value) && !(object as any).bevelEmbossConfig) {
-            (object as any).bevelEmbossConfig = {
-              enabled: true,
-              style: "inner-bevel",
-              technique: "smooth",
-              depth: 215,
-              size: 10,
-              soften: 1,
-              angle: 90,
-              altitude: 30,
-              highlightColor: "#ffffff",
-              highlightOpacity: 0.5,
-              shadowColor: "#000000",
-              shadowOpacity: 0.5,
-            };
-            object.set({
-              shadow: new fabric.Shadow({
-                color: "rgba(0, 0, 0, 0.45)",
-                blur: 5,
-                offsetX: 2,
-                offsetY: 4,
-              }),
-            });
+            applyBevelEmboss(object, { ...DEFAULT_BEVEL_EMBOSS });
           }
 
           // @ts-ignore
@@ -945,6 +867,8 @@ export const useEditor = ({
       initialCanvas: fabric.Canvas;
       initialContainer: HTMLDivElement;
     }) => {
+      installBevelEmbossRenderer();
+
       fabric.Object.prototype.set({
         cornerColor: "#FFF",
         cornerStyle: "circle",

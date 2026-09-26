@@ -210,7 +210,7 @@ export const Navbar = ({
             <Button
               onClick={onOrder}
               size="sm"
-              className="bg-[#8b3dff] hover:bg-[#7828e8] text-white font-bold rounded-full px-4 text-xs h-9 shadow-sm flex items-center gap-1.5 cursor-pointer"
+              className="bg-[#0073ff] hover:bg-[#0059cc] text-white font-bold rounded-full px-4 text-xs h-9 shadow-sm flex items-center gap-1.5 cursor-pointer"
             >
               <ShoppingBag className="w-3.5 h-3.5" />
               <span>অর্ডার করুন</span>
@@ -221,13 +221,13 @@ export const Navbar = ({
               href="/dashboard"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-100 hover:bg-neutral-200 text-xs font-semibold text-neutral-800 transition"
             >
-              <User className="w-3.5 h-3.5 text-[#8b3dff]" />
+              <User className="w-3.5 h-3.5 text-[#0073ff]" />
               <span className="max-w-[90px] truncate">{user.name || user.email}</span>
             </Link>
           ) : (
             <Link
               href="/login"
-              className="px-3.5 py-1.5 rounded-full bg-[#8b3dff] hover:bg-[#7828e8] text-white text-xs font-semibold transition"
+              className="px-3.5 py-1.5 rounded-full bg-[#0073ff] hover:bg-[#0059cc] text-white text-xs font-semibold transition"
             >
               লগইন
             </Link>

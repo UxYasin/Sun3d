@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS public.templates (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   category TEXT NOT NULL,
-  supported_sizes TEXT[] NOT NULL DEFAULT ARRAY['5:3', '4:2', '4:3'],
+  supported_sizes TEXT[] NOT NULL DEFAULT ARRAY['2:1', '1:1', '4:1'],
   thumbnail TEXT NOT NULL,
   description TEXT NOT NULL,
   material TEXT NOT NULL,
@@ -31,6 +31,9 @@ CREATE TABLE IF NOT EXISTS public.templates (
   enabled BOOLEAN NOT NULL DEFAULT TRUE,
   style JSONB NOT NULL,
   text_config JSONB NOT NULL,
+  sizes JSONB NOT NULL DEFAULT '[]'::jsonb,
+  variants JSONB NOT NULL DEFAULT '[]'::jsonb,
+  layout JSONB NOT NULL DEFAULT '[]'::jsonb,
   editable_fields TEXT[] NOT NULL DEFAULT ARRAY['houseName', 'proprietor', 'address', 'holdingNumber'],
   default_values JSONB NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -42,7 +45,9 @@ CREATE TABLE IF NOT EXISTS public.customer_designs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id TEXT NOT NULL,
   template_id TEXT NOT NULL REFERENCES public.templates(id) ON DELETE CASCADE,
-  size TEXT NOT NULL CHECK (size IN ('5:3', '4:2', '4:3')),
+  size TEXT NOT NULL CHECK (size IN ('2:1', '1:1', '4:1', 'custom')),
+  custom_size JSONB,
+  variant_id TEXT,
   house_name TEXT NOT NULL,
   proprietor TEXT NOT NULL,
   address TEXT NOT NULL,
@@ -62,7 +67,9 @@ CREATE TABLE IF NOT EXISTS public.orders (
   customer_email TEXT NOT NULL,
   customer_phone TEXT NOT NULL,
   template_id TEXT NOT NULL REFERENCES public.templates(id),
-  size TEXT NOT NULL CHECK (size IN ('5:3', '4:2', '4:3')),
+  size TEXT NOT NULL CHECK (size IN ('2:1', '1:1', '4:1', 'custom')),
+  custom_size JSONB,
+  variant_id TEXT,
   house_name TEXT NOT NULL,
   final_design_data JSONB NOT NULL,
   price NUMERIC NOT NULL,
@@ -103,6 +110,41 @@ CREATE TABLE IF NOT EXISTS public.business_settings (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT single_business_settings_row CHECK (id = 1)
 );
+
+-- ==========================================================
+-- Migration: designs with sizes + colour variants
+-- Idempotent, so it is safe to re-run on an existing database.
+-- ==========================================================
+
+ALTER TABLE public.templates
+  ADD COLUMN IF NOT EXISTS sizes JSONB NOT NULL DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS variants JSONB NOT NULL DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS layout JSONB NOT NULL DEFAULT '[]'::jsonb;
+
+ALTER TABLE public.templates
+  ALTER COLUMN supported_sizes SET DEFAULT ARRAY['2:1', '1:1', '4:1'];
+
+ALTER TABLE public.customer_designs
+  ADD COLUMN IF NOT EXISTS custom_size JSONB,
+  ADD COLUMN IF NOT EXISTS variant_id TEXT;
+
+ALTER TABLE public.orders
+  ADD COLUMN IF NOT EXISTS custom_size JSONB,
+  ADD COLUMN IF NOT EXISTS variant_id TEXT;
+
+-- Old rows were keyed 5:3 / 4:2 / 4:3.
+UPDATE public.customer_designs
+   SET size = CASE size WHEN '4:2' THEN '2:1' WHEN '5:3' THEN '2:1' WHEN '4:3' THEN '1:1' ELSE size END;
+UPDATE public.orders
+   SET size = CASE size WHEN '4:2' THEN '2:1' WHEN '5:3' THEN '2:1' WHEN '4:3' THEN '1:1' ELSE size END;
+
+ALTER TABLE public.customer_designs DROP CONSTRAINT IF EXISTS customer_designs_size_check;
+ALTER TABLE public.customer_designs
+  ADD CONSTRAINT customer_designs_size_check CHECK (size IN ('2:1', '1:1', '4:1', 'custom'));
+
+ALTER TABLE public.orders DROP CONSTRAINT IF EXISTS orders_size_check;
+ALTER TABLE public.orders
+  ADD CONSTRAINT orders_size_check CHECK (size IN ('2:1', '1:1', '4:1', 'custom'));
 
 -- Indices for high performance queries
 CREATE INDEX IF NOT EXISTS idx_orders_customer_id ON public.orders(customer_id);

@@ -28,7 +28,7 @@ export function Header({ onOpenAuth, onSelectTemplatesClick }: HeaderProps) {
         {/* Canva Inspired Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
           <span className="text-2xl sm:text-3xl font-black tracking-tight text-neutral-950 font-serif italic select-none">
-            Sun<span className="text-[#8b3dff] not-italic font-sans">3D</span>
+            Sun<span className="text-[#0073ff] not-italic font-sans">3D</span>
           </span>
           <span className="text-[11px] font-semibold text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded-full">
             নেমপ্লেট স্টুডিও
@@ -37,33 +37,15 @@ export function Header({ onOpenAuth, onSelectTemplatesClick }: HeaderProps) {
 
         {/* Center Nav Links - Clean text only, no icon clutter */}
         <nav className="hidden md:flex items-center gap-7 text-[15px] font-medium text-neutral-700">
+          <Link href="/" className="hover:text-[#0073ff] transition-colors py-1">
+            হোম
+          </Link>
           <button
             onClick={handleTemplatesClick}
-            className="hover:text-[#8b3dff] transition-colors cursor-pointer py-1"
+            className="hover:text-[#0073ff] transition-colors cursor-pointer py-1"
           >
             টেমপ্লেট গ্যালারি
           </button>
-          <Link
-            href="/#features"
-            className="hover:text-[#8b3dff] transition-colors py-1"
-          >
-            ফিচার্স
-          </Link>
-          <Link
-            href="/#sizes"
-            className="hover:text-[#8b3dff] transition-colors py-1"
-          >
-            সাইজ ও রেশিও
-          </Link>
-          <Link
-            href="/#how-it-works"
-            className="hover:text-[#8b3dff] transition-colors py-1"
-          >
-            কিভাবে অর্ডার করবেন
-          </Link>
-          <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
-            বিকাশ / নগদ পেমেন্ট
-          </span>
         </nav>
 
         {/* Right Actions - Canva Pill Style */}
@@ -107,7 +89,7 @@ export function Header({ onOpenAuth, onSelectTemplatesClick }: HeaderProps) {
 
           <button
             onClick={handleTemplatesClick}
-            className="text-xs sm:text-sm font-semibold bg-[#8b3dff] hover:bg-[#772ce8] text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-full transition-all cursor-pointer"
+            className="text-xs sm:text-sm font-semibold bg-[#0073ff] hover:bg-[#0059cc] text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-full transition-all cursor-pointer"
           >
             ডিজাইন শুরু করুন
           </button>

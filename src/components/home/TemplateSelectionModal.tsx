@@ -22,14 +22,14 @@ export function TemplateSelectionModal({
   onClose,
   onContinue
 }: TemplateSelectionModalProps) {
-  const [selectedSize, setSelectedSize] = useState<NameplateSize>('5:3');
+  const [selectedSize, setSelectedSize] = useState<NameplateSize>('2:1');
 
   useEffect(() => {
     if (template) {
       if (initialSize && template.supportedSizes.includes(initialSize)) {
         setSelectedSize(initialSize);
       } else {
-        setSelectedSize(template.supportedSizes[0] || '5:3');
+        setSelectedSize(template.supportedSizes[0] || '2:1');
       }
     }
   }, [template, initialSize]);

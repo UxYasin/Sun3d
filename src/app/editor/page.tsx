@@ -10,13 +10,14 @@ const Editor = dynamic(
     ssr: false,
     loading: () => (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-white gap-3">
-        <Loader className="w-8 h-8 animate-spin text-[#8b3dff]" />
+        <Loader className="w-8 h-8 animate-spin text-[#0073ff]" />
         <span className="text-sm font-semibold text-neutral-600">Canva স্টুডিও লোড হচ্ছে...</span>
       </div>
     ),
   }
 );
 import { MOCK_TEMPLATES } from '@/data/mock-templates';
+import { resolveSize } from '@/lib/template-utils';
 import { OrderReviewModal } from '@/components/editor/OrderReviewModal';
 import { PaymentInstructionsModal } from '@/components/orders/PaymentInstructionsModal';
 import { useAuth } from '@/lib/auth-context';
@@ -40,7 +41,7 @@ function CanvasEditorPageContent() {
 
   const [designState, setDesignState] = useState<NameplateDesignState>({
     templateId: 'tpl-obsidian-gold',
-    size: '5:3',
+    size: '2:1',
     houseName: 'রহমান ভিলা',
     proprietor: 'মো: আনিসুর রহমান',
     address: 'বাড়ি ২৪, রোড ৭, ধানমন্ডি, ঢাকা',
@@ -100,7 +101,7 @@ function CanvasEditorPageContent() {
     const found = MOCK_TEMPLATES.find((t) => t.id === resolvedTemplateId) || MOCK_TEMPLATES[0];
     setActiveTemplate(found);
 
-    const safeSize = resolvedSize && found.supportedSizes.includes(resolvedSize) ? resolvedSize : (found.supportedSizes[0] || '5:3');
+    const safeSize = resolvedSize && found.supportedSizes.includes(resolvedSize) ? resolvedSize : (found.supportedSizes[0] || '2:1');
 
     if (!queryDesignId) {
       setDesignState((prev) => ({
@@ -149,13 +150,19 @@ function CanvasEditorPageContent() {
     }
   };
 
+  const activeSize = resolveSize(
+    activeTemplate,
+    designState.size,
+    designState.customSize
+  );
+
   return (
     <div className="h-screen w-screen overflow-hidden bg-background">
       <Editor
         initialData={{
           id: queryDesignId || activeTemplate.id,
-          width: designState.size === '5:3' ? 900 : designState.size === '4:2' ? 960 : 800,
-          height: designState.size === '5:3' ? 540 : designState.size === '4:2' ? 480 : 600,
+          width: activeSize.width,
+          height: activeSize.height,
         }}
         onSave={handleSaveCanvas}
         onOrder={handleOrderClick}
@@ -188,7 +195,7 @@ export default function EditorPage() {
     <Suspense
       fallback={
         <div className="h-screen w-screen flex flex-col items-center justify-center bg-white gap-3">
-          <Loader className="w-8 h-8 animate-spin text-[#8b3dff]" />
+          <Loader className="w-8 h-8 animate-spin text-[#0073ff]" />
           <span className="text-sm font-semibold text-neutral-600">Canva স্টুডিও লোড হচ্ছে...</span>
         </div>
       }

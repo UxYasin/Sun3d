@@ -4,8 +4,6 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
-import { Header } from '@/components/common/Header';
-import { Footer } from '@/components/common/Footer';
 import { OrderStoreService } from '@/lib/order-store';
 import {
   CustomerOrder,
@@ -18,15 +16,15 @@ import {
 } from '@/types/nameplate';
 import { MOCK_TEMPLATES, SIZE_LABELS } from '@/data/mock-templates';
 import { NameplatePreview } from '@/components/nameplate/NameplatePreview';
+import { TemplateBuilder } from '@/app/admin/components/template-builder';
+import {
+  AdminSidebar,
+  AdminTopbar,
+  type AdminTab
+} from '@/app/admin/components/admin-shell';
+import { getTemplateSizes, getTemplateVariants } from '@/lib/template-utils';
 import {
   Shield,
-  ShieldCheck,
-  LayoutDashboard,
-  ShoppingBag,
-  Users,
-  Layers,
-  CreditCard,
-  Settings,
   Search,
   CheckCircle2,
   Clock,
@@ -46,11 +44,10 @@ import {
   Truck,
   Copy,
   Plus,
+  Pencil,
   Trash2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-type AdminTab = 'dashboard' | 'orders' | 'customers' | 'templates' | 'payments' | 'settings';
 
 function AdminMain() {
   const router = useRouter();
@@ -76,6 +73,20 @@ function AdminMain() {
 
   // Toast / Notification banner
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [builder, setBuilder] = useState<{ open: boolean; template?: Template }>({
+    open: false
+  });
+  const [navOpen, setNavOpen] = useState(false);
+
+  // Apply the saved colour scheme. DOM-only, so no cascading render.
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('sun3d_theme');
+      document.documentElement.classList.toggle('dark', stored === 'dark');
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -103,8 +114,8 @@ function AdminMain() {
   if (!isLoading && (!user || user.role !== 'admin')) {
     return (
       <div className="min-h-[75vh] flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white dark:bg-zinc-900 p-8 rounded-[24px] border border-neutral-200 dark:border-neutral-800 shadow-none text-center space-y-4">
-          <div className="w-14 h-14 rounded-[20px] bg-amber-100 dark:bg-amber-950 text-[#8b3dff] flex items-center justify-center mx-auto">
+        <div className="max-w-md w-full bg-white dark:bg-zinc-900 p-8 rounded-lg border border-neutral-200 dark:border-neutral-800 shadow-none text-center space-y-4">
+          <div className="w-14 h-14 rounded-md bg-amber-100 dark:bg-amber-950 text-[#0073ff] flex items-center justify-center mx-auto">
             <Shield className="w-7 h-7" />
           </div>
           <h2 className="text-xl font-black text-neutral-900 dark:text-white">
@@ -120,7 +131,7 @@ function AdminMain() {
                 switchRole('admin');
                 showToast('Switched to Sun3D Operations Admin profile!');
               }}
-              className="w-full py-3 bg-[#8b3dff] hover:bg-[#772ce8] text-neutral-950 text-xs font-bold rounded-xl shadow-none transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 bg-[#0073ff] hover:bg-[#0059cc] text-neutral-950 text-xs font-bold rounded-xl shadow-none transition-all flex items-center justify-center gap-2"
             >
               <Sparkles className="w-4 h-4" />
               <span>1-Click Switch to Admin Profile</span>
@@ -182,46 +193,23 @@ function AdminMain() {
   };
 
   const handleCreateTemplate = () => {
-    const newId = `tpl-${Date.now()}`;
-    const newTpl: Template = {
-      id: newId,
-      name: `নতুন ৩ডি ফ্রেম ডিজাইন (${new Date().toLocaleDateString()})`,
-      category: 'Royal Brass & Slate',
-      supportedSizes: ['4:2'],
-      thumbnail: '/templates/golden-frame-border.png',
-      description: 'কাস্টম গোল্ডেন ব্রাস ও এক্রিলিক ৩ডি নামপ্লেট ডিজাইন।',
-      material: 'প্রিমিয়াম এক্রিলিক + ৩ডি মেটালিক লেটারিং',
-      priceStartingAt: 3500,
-      badge: 'New',
-      enabled: true,
-      style: {
-        background: '#006d03',
-        textureOverlay: '/templates/golden-frame-border.png',
-        borderColor: '#d4af37',
-        borderWidth: '0px',
-        borderRadius: '8px',
-        standoffScrewType: 'gold-cap',
-        materialFinish: 'gloss'
-      },
-      textConfig: {
-        houseName: { fontFamily: 'SutonnyMJ', fontSizeClass: 'text-4xl', fontWeight: 'bold', color: '#f5d061' },
-        proprietor: { fontFamily: 'SutonnyMJ', fontSizeClass: 'text-2xl', fontWeight: 'normal', color: '#f5d061' },
-        address: { fontFamily: 'SutonnyMJ', fontSizeClass: 'text-sm', color: '#f5d061' },
-        holdingNumber: { fontFamily: 'SutonnyMJ', fontSizeClass: 'text-base', color: '#f5d061' }
-      },
-      editableFields: ['houseName', 'proprietor', 'address', 'holdingNumber'],
-      defaultValues: {
-        houseName: 'mvwgDj nvmvb feb',
-        proprietor: '†cªvt kvn Avjg',
-        address: 'wcZvt g…Z nvi“b Ai iwk` • Mªvgt `wonvBigviv, ivqcyiv, biwms`x|',
-        holdingNumber: 'wemwgj­vwni ivngvwbi ivwng'
-      },
-      createdAt: new Date().toISOString()
-    };
+    setBuilder({ open: true, template: undefined });
+  };
 
-    const updated = OrderStoreService.createTemplate(newTpl);
+  const handleEditTemplate = (template: Template) => {
+    setBuilder({ open: true, template });
+  };
+
+  const handleSaveTemplate = (template: Template) => {
+    const exists = templates.some((t) => t.id === template.id);
+
+    const updated = exists
+      ? OrderStoreService.updateTemplate(template.id, template)
+      : OrderStoreService.createTemplate(template);
+
     setTemplates(updated);
-    showToast('New template created and added to system!');
+    setBuilder({ open: false });
+    showToast(exists ? 'Design updated.' : 'New design created!');
   };
 
   const handleSavePaymentSettings = (e: React.FormEvent) => {
@@ -266,84 +254,101 @@ function AdminMain() {
     return true;
   });
 
+  const notifications = [
+    ...orders
+      .filter((o) => o.paymentStatus === 'submitted')
+      .slice(0, 3)
+      .map((o) => ({
+        id: `pay-${o.id}`,
+        label: `#${o.orderNumber} — ${o.houseName}: payment awaiting verification`
+      })),
+    ...orders
+      .filter((o) => o.productionStatus === 'Ready')
+      .slice(0, 2)
+      .map((o) => ({
+        id: `ready-${o.id}`,
+        label: `#${o.orderNumber} — ready for dispatch`
+      }))
+  ];
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+    <div className="min-h-screen flex bg-muted">
+      <AdminSidebar
+        activeTab={activeTab}
+        counts={{
+          orders: orders.length,
+          customers: customers.length,
+          templates: templates.length,
+          pending: stats.paymentPending
+        }}
+        onChangeTab={(tab) => {
+          setActiveTab(tab);
+          if (tab === 'orders') setSelectedCustomerIdFilter(null);
+        }}
+        onSwitchToCustomer={() => switchRole('customer')}
+        isOpen={navOpen}
+        onClose={() => setNavOpen(false)}
+      />
+
+      <div className="flex-1 flex flex-col min-w-0">
+        <AdminTopbar
+          activeTab={activeTab}
+          userName={user?.name || 'Admin'}
+          search={orderSearch}
+          onSearch={setOrderSearch}
+          pendingCount={stats.paymentPending}
+          onOpenNav={() => setNavOpen(true)}
+          notifications={notifications}
+        />
+
+        <main className="flex-1 overflow-y-auto">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed top-20 right-6 z-50 bg-neutral-900 text-white dark:bg-[#8b3dff] dark:text-neutral-950 px-4 py-3 rounded-[20px] text-xs font-bold shadow-none flex items-center gap-2 animate-fade-in border border-[#8b3dff]/30">
+        <div className="fixed top-20 right-6 z-50 bg-neutral-900 text-white dark:bg-[#0073ff] dark:text-neutral-950 px-4 py-3 rounded-md text-xs font-bold shadow-none flex items-center gap-2 animate-fade-in border border-[#0073ff]/30">
           <CheckCircle2 className="w-4 h-4 text-emerald-400 dark:text-emerald-950" />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Admin Top Header Banner */}
-      <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8 shadow-none flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-[20px] bg-[#8b3dff] text-white font-black text-xl flex items-center justify-center shadow-none">
-            <ShieldCheck className="w-7 h-7" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-black text-neutral-900 dark:text-white">
-                Sun3D Operations CMS
-              </h1>
-              <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#8b3dff] text-neutral-950 shadow-xs">
-                Admin Center
-              </span>
-            </div>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-              Manage incoming household orders, verify bKash/Nagad payments, and track laser manufacturing.
-            </p>
-          </div>
+      {/* Page header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-400">
+            {new Date()
+              .toLocaleDateString('en-GB', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+              })
+              .replace(',', ' ·')}
+          </p>
+          <h1 className="text-2xl sm:text-3xl font-black text-neutral-900 dark:text-white mt-1">
+            Welcome back, {(user?.name || 'Admin').split(' ')[0]}
+          </h1>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2 max-w-2xl leading-relaxed">
+            {stats.newOrders} new order{stats.newOrders === 1 ? '' : 's'},{' '}
+            {stats.paymentPending} payment
+            {stats.paymentPending === 1 ? '' : 's'} awaiting verification, and{' '}
+            {stats.working} job{stats.working === 1 ? '' : 's'} in production.
+          </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           <button
             onClick={() => switchRole('customer')}
-            className="px-3.5 py-2 rounded-xl text-xs font-bold text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-zinc-800 hover:bg-neutral-200 transition-colors"
+            className="px-4 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 text-xs font-bold text-neutral-700 dark:text-neutral-200 hover:bg-white dark:hover:bg-zinc-900 transition-colors"
           >
             Switch to Customer View
           </button>
           <Link
             href="/editor"
-            className="px-4 py-2 bg-neutral-900 hover:bg-black text-white dark:bg-[#8b3dff] dark:hover:bg-[#772ce8] dark:text-neutral-950 rounded-xl text-xs font-bold transition-all"
+            className="px-4 py-2 rounded-lg bg-[#0073ff] hover:bg-[#0059cc] text-white text-xs font-bold transition-colors"
           >
             Launch Editor
           </Link>
         </div>
-      </div>
-
-      {/* Admin Navigation Bar */}
-      <div className="flex items-center gap-2 border-b border-neutral-200 dark:border-neutral-800 pb-4 mb-8 overflow-x-auto">
-        {[
-          { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-          { id: 'orders', label: `Orders (${orders.length})`, icon: ShoppingBag },
-          { id: 'customers', label: `Customers (${customers.length})`, icon: Users },
-          { id: 'templates', label: `Templates (${templates.length})`, icon: Layers },
-          { id: 'payments', label: 'Payment Settings', icon: CreditCard },
-          { id: 'settings', label: 'Business Settings', icon: Settings }
-        ].map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => {
-                setActiveTab(tab.id as AdminTab);
-                if (tab.id === 'orders') setSelectedCustomerIdFilter(null);
-              }}
-              className={cn(
-                'inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0',
-                isActive
-                  ? 'bg-neutral-900 text-white dark:bg-[#8b3dff] dark:text-neutral-950 shadow-none'
-                  : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-zinc-800'
-              )}
-            >
-              <Icon className="w-4 h-4" />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
       </div>
 
       {/* ============================================================ */}
@@ -352,24 +357,30 @@ function AdminMain() {
       {activeTab === 'dashboard' && (
         <div className="space-y-8 animate-fade-in">
           {/* KPI Summary Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
             {[
-              { label: 'New Orders', count: stats.newOrders, color: 'text-[#8b3dff] bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800' },
-              { label: 'Payment Pending', count: stats.paymentPending, color: 'text-orange-600 bg-orange-50 dark:bg-orange-950/40 border-orange-200 dark:border-orange-800' },
-              { label: 'Paid & Verified', count: stats.paid, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800' },
-              { label: 'In Laser Cutting', count: stats.working, color: 'text-blue-600 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800' },
-              { label: 'Ready for Dispatch', count: stats.ready, color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800' },
-              { label: 'Delivered', count: stats.completed, color: 'text-purple-600 bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800' }
+              { label: 'New Orders', count: stats.newOrders, dot: 'bg-amber-500', hint: `of ${orders.length} total` },
+              { label: 'Payment Pending', count: stats.paymentPending, dot: 'bg-orange-500', hint: 'awaiting verification' },
+              { label: 'Paid & Verified', count: stats.paid, dot: 'bg-emerald-500', hint: `৳${stats.totalRevenue.toLocaleString()} collected` },
+              { label: 'In Production', count: stats.working, dot: 'bg-blue-500', hint: 'in laser cutting' },
+              { label: 'Ready to Ship', count: stats.ready, dot: 'bg-indigo-500', hint: 'awaiting handover' },
+              { label: 'Delivered', count: stats.completed, dot: 'bg-slate-400', hint: 'completed jobs' }
             ].map((card) => (
               <div
                 key={card.label}
-                className={cn('p-4 rounded-[20px] border flex flex-col justify-between', card.color)}
+                className="bg-white rounded-lg border p-4 flex flex-col gap-2"
               >
-                <span className="text-[11px] font-bold uppercase tracking-wider opacity-85">
-                  {card.label}
-                </span>
-                <span className="text-2xl sm:text-3xl font-black mt-2">
+                <div className="flex items-center gap-2">
+                  <span className={cn('size-2 rounded-full shrink-0', card.dot)} />
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground truncate">
+                    {card.label}
+                  </span>
+                </div>
+                <span className="text-2xl font-semibold text-foreground leading-none">
                   {card.count}
+                </span>
+                <span className="text-xs text-muted-foreground truncate">
+                  {card.hint}
                 </span>
               </div>
             ))}
@@ -377,12 +388,12 @@ function AdminMain() {
 
           {/* Revenue & Quick Action Banner */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="p-6 rounded-[24px] bg-neutral-900 text-white dark:bg-zinc-900 border border-neutral-800 flex flex-col justify-between">
+            <div className="p-6 rounded-lg bg-neutral-900 text-white dark:bg-zinc-900 border border-neutral-800 flex flex-col justify-between">
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-neutral-400">
                   Total Verified Gross Revenue
                 </span>
-                <h3 className="text-3xl font-black text-[#a855f7] mt-2">
+                <h3 className="text-3xl font-black text-[#338dff] mt-2">
                   ৳{stats.totalRevenue.toLocaleString()} BDT
                 </h3>
                 <p className="text-xs text-neutral-400 mt-1">
@@ -396,7 +407,7 @@ function AdminMain() {
             </div>
 
             {/* Urgent Payment Pending List */}
-            <div className="md:col-span-2 p-6 rounded-[24px] bg-white dark:bg-zinc-900 border border-neutral-200 dark:border-neutral-800 shadow-none flex flex-col justify-between">
+            <div className="md:col-span-2 p-6 rounded-lg bg-white dark:bg-zinc-900 border border-neutral-200 dark:border-neutral-800 shadow-none flex flex-col justify-between">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-orange-500" />
@@ -409,7 +420,7 @@ function AdminMain() {
                     setPaymentFilter('submitted');
                     setActiveTab('orders');
                   }}
-                  className="text-xs font-bold text-[#8b3dff] hover:underline"
+                  className="text-xs font-bold text-[#0073ff] hover:underline"
                 >
                   View All Pending
                 </button>
@@ -423,7 +434,7 @@ function AdminMain() {
                     <div
                       key={ord.id}
                       onClick={() => setSelectedOrder(ord)}
-                      className="p-3 bg-neutral-50 dark:bg-zinc-800/60 rounded-xl border border-neutral-200 dark:border-neutral-700/80 flex items-center justify-between cursor-pointer hover:border-[#8b3dff] transition-colors"
+                      className="p-3 bg-neutral-50 dark:bg-zinc-800/60 rounded-xl border border-neutral-200 dark:border-neutral-700/80 flex items-center justify-between cursor-pointer hover:border-[#0073ff] transition-colors"
                     >
                       <div>
                         <span className="font-mono text-xs font-black text-neutral-900 dark:text-white">
@@ -441,7 +452,7 @@ function AdminMain() {
                         <span className="text-xs font-bold text-neutral-900 dark:text-white">
                           ৳{ord.price.toLocaleString()}
                         </span>
-                        <span className="px-2.5 py-1 bg-[#8b3dff] text-neutral-950 text-[11px] font-bold rounded-lg shadow-xs">
+                        <span className="px-2.5 py-1 bg-[#0073ff] text-neutral-950 text-[11px] font-bold rounded-lg shadow-xs">
                           Inspect & Verify
                         </span>
                       </div>
@@ -465,13 +476,13 @@ function AdminMain() {
               </h3>
               <button
                 onClick={() => setActiveTab('orders')}
-                className="text-xs font-bold text-[#8b3dff] hover:underline"
+                className="text-xs font-bold text-[#0073ff] hover:underline"
               >
                 View full table →
               </button>
             </div>
 
-            <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-neutral-200 dark:border-neutral-800 overflow-hidden shadow-none">
+            <div className="bg-white dark:bg-zinc-900 rounded-lg border border-neutral-200 dark:border-neutral-800 overflow-hidden shadow-none">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-neutral-50 dark:bg-zinc-800/80 border-b border-neutral-200 dark:border-neutral-800 text-neutral-500 uppercase font-bold">
@@ -512,7 +523,7 @@ function AdminMain() {
                         <td className="p-4">
                           <button
                             onClick={() => setSelectedOrder(ord)}
-                            className="px-2.5 py-1 text-xs font-bold text-neutral-800 dark:text-neutral-200 bg-neutral-100 dark:bg-zinc-800 hover:bg-[#8b3dff] hover:text-neutral-950 rounded-lg transition-colors"
+                            className="px-2.5 py-1 text-xs font-bold text-neutral-800 dark:text-neutral-200 bg-neutral-100 dark:bg-zinc-800 hover:bg-[#0073ff] hover:text-neutral-950 rounded-lg transition-colors"
                           >
                             Open
                           </button>
@@ -533,7 +544,7 @@ function AdminMain() {
       {activeTab === 'orders' && (
         <div className="space-y-6 animate-fade-in">
           {/* Controls Bar */}
-          <div className="bg-white dark:bg-zinc-900 rounded-[20px] border border-neutral-200 dark:border-neutral-800 p-4 shadow-none flex flex-col lg:flex-row items-center justify-between gap-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-md border border-neutral-200 dark:border-neutral-800 p-4 shadow-none flex flex-col lg:flex-row items-center justify-between gap-4">
             {/* Search Input */}
             <div className="relative w-full lg:w-96">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
@@ -542,7 +553,7 @@ function AdminMain() {
                 value={orderSearch}
                 onChange={(e) => setOrderSearch(e.target.value)}
                 placeholder="Search by order #, phone, family name, TrxID..."
-                className="w-full pl-9 pr-3 py-2 bg-neutral-50 dark:bg-zinc-800 border border-neutral-200 dark:border-neutral-700 rounded-xl text-xs text-neutral-900 dark:text-white focus:ring-2 focus:ring-[#8b3dff]"
+                className="w-full pl-9 pr-3 py-2 bg-neutral-50 dark:bg-zinc-800 border border-neutral-200 dark:border-neutral-700 rounded-xl text-xs text-neutral-900 dark:text-white focus:ring-2 focus:ring-[#0073ff]"
               />
             </div>
 
@@ -599,7 +610,7 @@ function AdminMain() {
           )}
 
           {/* Orders Table */}
-          <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-neutral-200 dark:border-neutral-800 overflow-hidden shadow-none">
+          <div className="bg-white dark:bg-zinc-900 rounded-lg border border-neutral-200 dark:border-neutral-800 overflow-hidden shadow-none">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-neutral-50 dark:bg-zinc-800/80 border-b border-neutral-200 dark:border-neutral-800 text-neutral-500 uppercase font-bold">
@@ -671,7 +682,7 @@ function AdminMain() {
                       <td className="p-4 text-right">
                         <button
                           onClick={() => setSelectedOrder(ord)}
-                          className="px-3 py-1.5 bg-neutral-900 hover:bg-black text-white dark:bg-[#8b3dff] dark:hover:bg-[#772ce8] dark:text-neutral-950 rounded-xl text-xs font-bold transition-all shadow-xs"
+                          className="px-3 py-1.5 bg-neutral-900 hover:bg-black text-white dark:bg-[#0073ff] dark:hover:bg-[#0059cc] dark:text-neutral-950 rounded-xl text-xs font-bold transition-all shadow-xs"
                         >
                           Inspect & Manage
                         </button>
@@ -713,11 +724,11 @@ function AdminMain() {
                   setSelectedCustomerIdFilter(cust.id);
                   setActiveTab('orders');
                 }}
-                className="bg-white dark:bg-zinc-900 p-6 rounded-[24px] border border-neutral-200 dark:border-neutral-800 shadow-none hover:shadow-none transition-shadow cursor-pointer flex flex-col justify-between"
+                className="bg-white dark:bg-zinc-900 p-6 rounded-lg border border-neutral-200 dark:border-neutral-800 shadow-none hover:shadow-none transition-shadow cursor-pointer flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-[20px] bg-amber-100 dark:bg-amber-950 text-[#8b3dff] font-black text-lg flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-md bg-amber-100 dark:bg-amber-950 text-[#0073ff] font-black text-lg flex items-center justify-center">
                       {cust.name.charAt(0)}
                     </div>
                     <div>
@@ -745,9 +756,9 @@ function AdminMain() {
                   </div>
                   <div>
                     <span className="text-neutral-400 block text-[10px]">Total Spent</span>
-                    <span className="font-black text-[#8b3dff] dark:text-[#a855f7]">৳{cust.totalSpent.toLocaleString()}</span>
+                    <span className="font-black text-[#0073ff] dark:text-[#338dff]">৳{cust.totalSpent.toLocaleString()}</span>
                   </div>
-                  <span className="text-[10px] font-bold text-[#8b3dff] hover:underline flex items-center gap-0.5">
+                  <span className="text-[10px] font-bold text-[#0073ff] hover:underline flex items-center gap-0.5">
                     <span>Orders</span>
                     <ArrowRight className="w-3 h-3" />
                   </span>
@@ -775,7 +786,7 @@ function AdminMain() {
             <button
               type="button"
               onClick={handleCreateTemplate}
-              className="px-4 py-2 bg-[#8b3dff] hover:bg-[#7828e8] text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm self-start sm:self-auto cursor-pointer"
+              className="px-4 py-2 bg-[#0073ff] hover:bg-[#0059cc] text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm self-start sm:self-auto cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Create New Template</span>
@@ -786,7 +797,7 @@ function AdminMain() {
             {templates.map((tpl) => (
               <div
                 key={tpl.id}
-                className="bg-white dark:bg-zinc-900 p-5 rounded-[24px] border border-neutral-200 dark:border-neutral-800 shadow-none flex items-center justify-between gap-4"
+                className="bg-white dark:bg-zinc-900 p-5 rounded-lg border border-neutral-200 dark:border-neutral-800 shadow-none flex items-center justify-between gap-4"
               >
                 <div>
                   <div className="flex items-center gap-2">
@@ -794,7 +805,7 @@ function AdminMain() {
                       {tpl.name}
                     </h4>
                     {tpl.badge && (
-                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#8b3dff] text-white">
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#0073ff] text-white">
                         {tpl.badge}
                       </span>
                     )}
@@ -803,11 +814,32 @@ function AdminMain() {
                     {tpl.category} • {tpl.material}
                   </p>
                   <p className="text-[11px] font-mono text-neutral-400 mt-1">
-                    Sizes: {tpl.supportedSizes.join(', ')} • Price: ৳{tpl.priceStartingAt.toLocaleString()}
+                    Sizes: {getTemplateSizes(tpl).map((s) => s.label).join(', ')} • Price: ৳{tpl.priceStartingAt.toLocaleString()}
                   </p>
+                  <div className="flex items-center gap-1.5 mt-1.5">
+                    {getTemplateVariants(tpl).map((variant) => (
+                      <span
+                        key={variant.id}
+                        title={variant.name}
+                        className="size-4 rounded-full border border-neutral-300"
+                        style={{ backgroundColor: variant.background }}
+                      />
+                    ))}
+                    <span className="text-[10px] text-neutral-400 ml-1">
+                      {getTemplateVariants(tpl).length} colour version(s)
+                    </span>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    title="Edit Design"
+                    onClick={() => handleEditTemplate(tpl)}
+                    className="p-2 rounded-xl text-xs font-bold transition-all border border-neutral-200 hover:bg-neutral-100 text-neutral-600 dark:border-neutral-800 dark:hover:bg-zinc-800 dark:text-neutral-300"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
                   <button
                     type="button"
                     title="Duplicate Template"
@@ -847,7 +879,7 @@ function AdminMain() {
       {/* TAB 5: PAYMENT SETTINGS */}
       {/* ============================================================ */}
       {activeTab === 'payments' && (
-        <div className="max-w-2xl bg-white dark:bg-zinc-900 p-6 sm:p-8 rounded-[24px] border border-neutral-200 dark:border-neutral-800 shadow-none space-y-6 animate-fade-in">
+        <div className="max-w-2xl bg-white dark:bg-zinc-900 p-6 sm:p-8 rounded-lg border border-neutral-200 dark:border-neutral-800 shadow-none space-y-6 animate-fade-in">
           <div>
             <h3 className="font-black text-lg text-neutral-900 dark:text-white">
               Manual bKash & Nagad Configuration
@@ -859,7 +891,7 @@ function AdminMain() {
 
           <form onSubmit={handleSavePaymentSettings} className="space-y-6">
             {/* bKash Section */}
-            <div className="p-5 bg-pink-50/50 dark:bg-pink-950/20 rounded-[20px] border border-pink-200 dark:border-pink-900/60 space-y-3">
+            <div className="p-5 bg-pink-50/50 dark:bg-pink-950/20 rounded-md border border-pink-200 dark:border-pink-900/60 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="font-black text-pink-600 text-sm">bKash Configuration</span>
                 <label className="flex items-center gap-2 text-xs font-bold text-neutral-700 dark:text-neutral-300">
@@ -899,7 +931,7 @@ function AdminMain() {
             </div>
 
             {/* Nagad Section */}
-            <div className="p-5 bg-orange-50/50 dark:bg-orange-950/20 rounded-[20px] border border-orange-200 dark:border-orange-900/60 space-y-3">
+            <div className="p-5 bg-orange-50/50 dark:bg-orange-950/20 rounded-md border border-orange-200 dark:border-orange-900/60 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="font-black text-orange-600 text-sm">Nagad Configuration</span>
                 <label className="flex items-center gap-2 text-xs font-bold text-neutral-700 dark:text-neutral-300">
@@ -940,7 +972,7 @@ function AdminMain() {
 
             <button
               type="submit"
-              className="w-full py-3 bg-neutral-900 hover:bg-black text-white dark:bg-[#8b3dff] dark:hover:bg-[#772ce8] dark:text-neutral-950 font-bold text-xs rounded-xl shadow-none transition-all"
+              className="w-full py-3 bg-neutral-900 hover:bg-black text-white dark:bg-[#0073ff] dark:hover:bg-[#0059cc] dark:text-neutral-950 font-bold text-xs rounded-xl shadow-none transition-all"
             >
               Save Payment Settings
             </button>
@@ -952,7 +984,7 @@ function AdminMain() {
       {/* TAB 6: BUSINESS SETTINGS */}
       {/* ============================================================ */}
       {activeTab === 'settings' && (
-        <div className="max-w-2xl bg-white dark:bg-zinc-900 p-6 sm:p-8 rounded-[24px] border border-neutral-200 dark:border-neutral-800 shadow-none space-y-6 animate-fade-in">
+        <div className="max-w-2xl bg-white dark:bg-zinc-900 p-6 sm:p-8 rounded-lg border border-neutral-200 dark:border-neutral-800 shadow-none space-y-6 animate-fade-in">
           <div>
             <h3 className="font-black text-lg text-neutral-900 dark:text-white">
               Business & Workshop Profile
@@ -1015,7 +1047,7 @@ function AdminMain() {
 
             <button
               type="submit"
-              className="w-full py-3 bg-neutral-900 hover:bg-black text-white dark:bg-[#8b3dff] dark:hover:bg-[#772ce8] dark:text-neutral-950 font-bold text-xs rounded-xl shadow-none transition-all mt-4"
+              className="w-full py-3 bg-neutral-900 hover:bg-black text-white dark:bg-[#0073ff] dark:hover:bg-[#0059cc] dark:text-neutral-950 font-bold text-xs rounded-xl shadow-none transition-all mt-4"
             >
               Save Business Profile
             </button>
@@ -1029,7 +1061,7 @@ function AdminMain() {
       {selectedOrder && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-fade-in">
           <div
-            className="relative w-full max-w-4xl bg-white dark:bg-zinc-900 rounded-[24px] border border-neutral-200 dark:border-neutral-800 shadow-none p-6 sm:p-8 max-h-[92vh] overflow-y-auto"
+            className="relative w-full max-w-4xl bg-white dark:bg-zinc-900 rounded-lg border border-neutral-200 dark:border-neutral-800 shadow-none p-6 sm:p-8 max-h-[92vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
@@ -1060,7 +1092,7 @@ function AdminMain() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
               {/* Left Column: Design Visual Simulation */}
               <div className="lg:col-span-6 space-y-4">
-                <div className="bg-neutral-100 dark:bg-zinc-950 rounded-[20px] p-4 sm:p-6 border border-neutral-200 dark:border-neutral-800">
+                <div className="bg-neutral-100 dark:bg-zinc-950 rounded-md p-4 sm:p-6 border border-neutral-200 dark:border-neutral-800">
                   <div className="flex items-center justify-between mb-3 text-[11px] font-bold text-neutral-500">
                     <span>Manufacturing Spec</span>
                     <span>Ratio: {selectedOrder.size}</span>
@@ -1090,7 +1122,7 @@ function AdminMain() {
               {/* Right Column: Payment & Production Controls */}
               <div className="lg:col-span-6 space-y-6">
                 {/* Payment Verification Box */}
-                <div className="p-5 rounded-[20px] bg-neutral-50 dark:bg-zinc-800/60 border border-neutral-200 dark:border-neutral-700/80 space-y-3">
+                <div className="p-5 rounded-md bg-neutral-50 dark:bg-zinc-800/60 border border-neutral-200 dark:border-neutral-700/80 space-y-3">
                   <div className="flex items-center justify-between">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
                       Payment Verification
@@ -1115,7 +1147,7 @@ function AdminMain() {
                     </p>
                     <p className="flex justify-between">
                       <span className="text-neutral-500">Current Payment Status:</span>
-                      <strong className="capitalize text-[#8b3dff] dark:text-[#a855f7]">{selectedOrder.paymentStatus}</strong>
+                      <strong className="capitalize text-[#0073ff] dark:text-[#338dff]">{selectedOrder.paymentStatus}</strong>
                     </p>
                   </div>
 
@@ -1144,7 +1176,7 @@ function AdminMain() {
                 </div>
 
                 {/* Production Status Box */}
-                <div className="p-5 rounded-[20px] bg-neutral-50 dark:bg-zinc-800/60 border border-neutral-200 dark:border-neutral-700/80 space-y-3">
+                <div className="p-5 rounded-md bg-neutral-50 dark:bg-zinc-800/60 border border-neutral-200 dark:border-neutral-700/80 space-y-3">
                   <div className="flex items-center justify-between">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
                       Production State Control
@@ -1166,7 +1198,7 @@ function AdminMain() {
                         className={cn(
                           'py-2 px-2 rounded-xl text-xs font-bold transition-all border',
                           selectedOrder.productionStatus === st
-                            ? 'bg-neutral-900 text-white dark:bg-[#8b3dff] dark:text-neutral-950 border-neutral-900 dark:border-amber-400'
+                            ? 'bg-neutral-900 text-white dark:bg-[#0073ff] dark:text-neutral-950 border-neutral-900 dark:border-amber-400'
                             : 'bg-white dark:bg-zinc-900 text-neutral-600 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700'
                         )}
                       >
@@ -1180,20 +1212,32 @@ function AdminMain() {
           </div>
         </div>
       )}
+
+          </div>
+        </main>
+      </div>
+
+      {builder.open && (
+        <TemplateBuilder
+          initial={builder.template}
+          onSave={handleSaveTemplate}
+          onClose={() => setBuilder({ open: false })}
+        />
+      )}
     </div>
   );
 }
 
 export default function AdminPage() {
   return (
-    <div className="min-h-screen bg-neutral-100 dark:bg-zinc-950 flex flex-col justify-between">
-      <Header />
-      <main className="flex-1">
-        <Suspense fallback={<div className="p-12 text-center text-xs text-neutral-500">Loading Admin CMS...</div>}>
-          <AdminMain />
-        </Suspense>
-      </main>
-      <Footer />
-    </div>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center text-xs text-neutral-500">
+          Loading Admin CMS...
+        </div>
+      }
+    >
+      <AdminMain />
+    </Suspense>
   );
 }

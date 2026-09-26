@@ -12,14 +12,19 @@ import {
 } from '@/types/nameplate';
 import { INITIAL_MOCK_DESIGNS, INITIAL_MOCK_ORDERS } from '@/data/mock-customer-data';
 import { MOCK_TEMPLATES } from '@/data/mock-templates';
+import { normalizeTemplate } from '@/lib/template-utils';
 
 const STORAGE_KEYS = {
   DESIGNS: 'sun3d_customer_designs',
   ORDERS: 'sun3d_customer_orders',
   PAYMENT_SETTINGS: 'sun3d_payment_settings',
   BUSINESS_SETTINGS: 'sun3d_business_settings',
-  ADMIN_TEMPLATES: 'sun3d_admin_templates'
+  ADMIN_TEMPLATES: 'sun3d_admin_templates',
+  TEMPLATES_VERSION: 'sun3d_templates_version'
 };
+
+/** Bumped when the stored template shape changes (sizes / colour variants). */
+const TEMPLATES_VERSION = 2;
 
 export const DEFAULT_PAYMENT_SETTINGS: PaymentSettings = {
   bkashNumber: '01711-223344',
@@ -431,16 +436,30 @@ export class OrderStoreService {
 
   // --- TEMPLATES MANAGEMENT (PROMPT 5) ---
   static getAdminTemplates(): Template[] {
-    if (typeof window === 'undefined') return MOCK_TEMPLATES;
+    const seed = () => MOCK_TEMPLATES.map(normalizeTemplate);
+
+    if (typeof window === 'undefined') return seed();
+
     try {
+      const version = Number(
+        localStorage.getItem(STORAGE_KEYS.TEMPLATES_VERSION) || 0
+      );
       const stored = localStorage.getItem(STORAGE_KEYS.ADMIN_TEMPLATES);
-      if (!stored) {
-        localStorage.setItem(STORAGE_KEYS.ADMIN_TEMPLATES, JSON.stringify(MOCK_TEMPLATES));
-        return MOCK_TEMPLATES;
+
+      // Older payloads (flat templates keyed by colour, 5:3/4:2/4:3 sizes)
+      // are replaced by the migrated design + variants.
+      if (!stored || version < TEMPLATES_VERSION) {
+        localStorage.setItem(
+          STORAGE_KEYS.ADMIN_TEMPLATES,
+          JSON.stringify(MOCK_TEMPLATES)
+        );
+        localStorage.setItem(STORAGE_KEYS.TEMPLATES_VERSION, String(TEMPLATES_VERSION));
+        return seed();
       }
-      return JSON.parse(stored);
+
+      return (JSON.parse(stored) as Template[]).map(normalizeTemplate);
     } catch {
-      return MOCK_TEMPLATES;
+      return seed();
     }
   }
 
@@ -481,7 +500,8 @@ export class OrderStoreService {
 
   static createTemplate(newTpl: Template): Template[] {
     const tpls = this.getAdminTemplates();
-    const updated = [newTpl, ...tpls];
+    const normalized = normalizeTemplate(newTpl);
+    const updated = [normalized, ...tpls];
     if (typeof window !== 'undefined') {
       localStorage.setItem(STORAGE_KEYS.ADMIN_TEMPLATES, JSON.stringify(updated));
 
@@ -489,7 +509,7 @@ export class OrderStoreService {
       fetch('/api/templates', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newTpl)
+        body: JSON.stringify(normalized)
       }).catch((e) => console.warn('Background Supabase createTemplate error:', e));
     }
     return updated;

@@ -5,13 +5,13 @@ import Link from 'next/link';
 
 export function Footer() {
   return (
-    <footer className="bg-[#0f1015] text-white border-t border-neutral-800">
+    <footer className="bg-[#020817] text-white border-t border-neutral-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
           {/* Brand */}
           <div className="space-y-3 md:col-span-1">
             <span className="text-2xl font-black tracking-tight text-white font-serif italic">
-              Sun<span className="text-[#8b3dff] not-italic font-sans">3D</span>
+              Sun<span className="text-[#0073ff] not-italic font-sans">3D</span>
             </span>
             <p className="text-xs text-neutral-400 leading-relaxed">
               বাংলাদেশের সেরা অনলাইন কাস্টমাইজেবল নেমপ্লেট মেকার। এক্রিলিক, সেগুন কাঠ ও মেটালের নিখুঁত লেজার কাটিং।
@@ -19,18 +19,6 @@ export function Footer() {
             <div className="text-xs text-emerald-400 font-semibold bg-emerald-950/40 px-3 py-1 rounded-full border border-emerald-800/60 w-fit">
               বিকাশ ও নগদ ভেরিফাইড পেমেন্ট
             </div>
-          </div>
-
-          {/* Sizes */}
-          <div className="space-y-2">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-300">
-              সাইজ ও রেশিও
-            </h4>
-            <ul className="text-xs text-neutral-400 space-y-1.5">
-              <li>৫:৩ অনুপাত — ১৫" × ৯" (মেইন গেট ও বাউন্ডারি)</li>
-              <li>৪:২ অনুপাত — ১৬" × ৮" (ডোর হেডার ও প্যানোরামিক)</li>
-              <li>৪:৩ অনুপাত — ১২" × ৯" (ফ্ল্যাট ও অ্যাপার্টমেন্ট)</li>
-            </ul>
           </div>
 
           {/* Materials */}

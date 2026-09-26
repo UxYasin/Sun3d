@@ -42,7 +42,7 @@ function DashboardContent() {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center space-y-2">
-          <div className="w-8 h-8 border-2 border-[#8b3dff] border-t-transparent rounded-full animate-spin mx-auto" />
+          <div className="w-8 h-8 border-2 border-[#0073ff] border-t-transparent rounded-full animate-spin mx-auto" />
           <p className="text-xs text-neutral-500">ড্যাশবোর্ড লোড হচ্ছে...</p>
         </div>
       </div>
@@ -58,7 +58,7 @@ function DashboardContent() {
       {/* Top Welcome Header (Canva Flat Style) */}
       <div className="bg-white rounded-[24px] border border-neutral-200 p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-[#8b3dff] text-white font-black text-xl flex items-center justify-center">
+          <div className="w-14 h-14 rounded-full bg-[#0073ff] text-white font-black text-xl flex items-center justify-center">
             {user.name.charAt(0)}
           </div>
           <div>
@@ -66,7 +66,7 @@ function DashboardContent() {
               <h1 className="text-xl sm:text-2xl font-bold text-neutral-950">
                 {user.name}
               </h1>
-              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-purple-50 text-[#8b3dff] border border-purple-100">
+              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-[#0073ff] border border-blue-100">
                 {user.role === 'admin' ? 'অ্যাডমিন' : 'কাস্টমার প্রোফাইল'}
               </span>
             </div>
@@ -103,7 +103,7 @@ function DashboardContent() {
           onClick={() => setActiveTab('designs')}
           className={`px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer ${
             activeTab === 'designs'
-              ? 'bg-[#8b3dff] text-white'
+              ? 'bg-[#0073ff] text-white'
               : 'text-neutral-600 hover:text-neutral-950 bg-neutral-100'
           }`}
         >
@@ -114,7 +114,7 @@ function DashboardContent() {
           onClick={() => setActiveTab('orders')}
           className={`px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer ${
             activeTab === 'orders'
-              ? 'bg-[#8b3dff] text-white'
+              ? 'bg-[#0073ff] text-white'
               : 'text-neutral-600 hover:text-neutral-950 bg-neutral-100'
           }`}
         >
@@ -125,7 +125,7 @@ function DashboardContent() {
           onClick={() => setActiveTab('account')}
           className={`px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer ${
             activeTab === 'account'
-              ? 'bg-[#8b3dff] text-white'
+              ? 'bg-[#0073ff] text-white'
               : 'text-neutral-600 hover:text-neutral-950 bg-neutral-100'
           }`}
         >
@@ -154,7 +154,7 @@ function DashboardContent() {
                 return (
                   <div
                     key={design.id}
-                    className="bg-white rounded-[20px] border border-neutral-200 overflow-hidden flex flex-col justify-between hover:border-[#8b3dff] transition-all"
+                    className="bg-white rounded-[20px] border border-neutral-200 overflow-hidden flex flex-col justify-between hover:border-[#0073ff] transition-all"
                   >
                     <div className="p-5 bg-[#f8f9fa] border-b border-neutral-100 flex items-center justify-center min-h-[180px]">
                       <div className="w-full max-w-[260px]">

@@ -17,13 +17,13 @@ export function TemplateDetailModal({
   onClose,
   onCustomize
 }: TemplateDetailModalProps) {
-  const [selectedSize, setSelectedSize] = useState<NameplateSize>('5:3');
+  const [selectedSize, setSelectedSize] = useState<NameplateSize>('2:1');
 
   if (!isOpen || !template) return null;
 
   const activeSize = template.supportedSizes.includes(selectedSize)
     ? selectedSize
-    : template.supportedSizes[0] || '5:3';
+    : template.supportedSizes[0] || '2:1';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/50 backdrop-blur-sm animate-fade-in">
@@ -81,7 +81,7 @@ export function TemplateDetailModal({
         {/* Right Side: Details & Actions */}
         <div className="md:w-5/12 p-6 sm:p-8 flex flex-col justify-between">
           <div>
-            <span className="text-xs font-semibold text-[#8b3dff] uppercase tracking-wider">
+            <span className="text-xs font-semibold text-[#0073ff] uppercase tracking-wider">
               {template.category} টেমপ্লেট
             </span>
 
@@ -90,7 +90,7 @@ export function TemplateDetailModal({
             </h3>
 
             <div className="flex items-center gap-2 mt-2 text-xs text-neutral-500 font-medium">
-              <span className="w-5 h-5 rounded-full bg-[#8b3dff] text-white flex items-center justify-center text-[10px] font-bold">
+              <span className="w-5 h-5 rounded-full bg-[#0073ff] text-white flex items-center justify-center text-[10px] font-bold">
                 S
               </span>
               <span>ডিজাইনার: Sun3D স্টুডিও</span>
@@ -113,7 +113,7 @@ export function TemplateDetailModal({
                     onClick={() => setSelectedSize(size)}
                     className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
                       activeSize === size
-                        ? 'bg-[#8b3dff] text-white'
+                        ? 'bg-[#0073ff] text-white'
                         : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
                     }`}
                   >

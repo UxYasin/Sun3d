@@ -161,7 +161,7 @@ export function PaymentInstructionsModal({
               value={transactionId}
               onChange={(e) => setTransactionId(e.target.value)}
               placeholder="যেমন: BK99X44221 বা 7H49A1209"
-              className="w-full px-4 py-2.5 rounded-[12px] border border-neutral-300 font-mono text-sm uppercase tracking-wider focus:outline-none focus:border-[#8b3dff]"
+              className="w-full px-4 py-2.5 rounded-[12px] border border-neutral-300 font-mono text-sm uppercase tracking-wider focus:outline-none focus:border-[#0073ff]"
             />
           </div>
 
@@ -176,7 +176,7 @@ export function PaymentInstructionsModal({
               value={senderPhone}
               onChange={(e) => setSenderPhone(e.target.value)}
               placeholder="+880 17..."
-              className="w-full px-4 py-2.5 rounded-[12px] border border-neutral-300 text-sm focus:outline-none focus:border-[#8b3dff]"
+              className="w-full px-4 py-2.5 rounded-[12px] border border-neutral-300 text-sm focus:outline-none focus:border-[#0073ff]"
             />
           </div>
 
@@ -190,7 +190,7 @@ export function PaymentInstructionsModal({
               value={paymentNote}
               onChange={(e) => setPaymentNote(e.target.value)}
               placeholder="যেমন: পার্সোনাল বিকাশ ওয়ালেট থেকে পাঠানো হয়েছে"
-              className="w-full px-4 py-2 rounded-[12px] border border-neutral-300 text-xs focus:outline-none focus:border-[#8b3dff]"
+              className="w-full px-4 py-2 rounded-[12px] border border-neutral-300 text-xs focus:outline-none focus:border-[#0073ff]"
             />
           </div>
 

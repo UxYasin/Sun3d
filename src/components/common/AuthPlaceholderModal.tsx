@@ -68,7 +68,7 @@ export function AuthPlaceholderModal({
         {/* Modal Header */}
         <div className="text-center mb-6">
           <span className="text-2xl font-black text-neutral-950 font-serif italic block mb-2">
-            Sun<span className="text-[#8b3dff] not-italic font-sans">3D</span>
+            Sun<span className="text-[#0073ff] not-italic font-sans">3D</span>
           </span>
           <h3 className="text-xl font-bold text-neutral-950">
             {isRegister ? 'নতুন অ্যাকাউন্ট তৈরি করুন' : 'সাইন ইন করুন'}
@@ -101,7 +101,7 @@ export function AuthPlaceholderModal({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="যেমন: মো: আনিসুর রহমান"
-                  className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-300 rounded-[12px] text-xs sm:text-sm text-neutral-900 focus:outline-none focus:border-[#8b3dff]"
+                  className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-300 rounded-[12px] text-xs sm:text-sm text-neutral-900 focus:outline-none focus:border-[#0073ff]"
                 />
               </div>
             )}
@@ -116,7 +116,7 @@ export function AuthPlaceholderModal({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@example.com"
-                className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-300 rounded-[12px] text-xs sm:text-sm text-neutral-900 focus:outline-none focus:border-[#8b3dff]"
+                className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-300 rounded-[12px] text-xs sm:text-sm text-neutral-900 focus:outline-none focus:border-[#0073ff]"
               />
             </div>
 
@@ -130,7 +130,7 @@ export function AuthPlaceholderModal({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-300 rounded-[12px] text-xs sm:text-sm text-neutral-900 focus:outline-none focus:border-[#8b3dff]"
+                className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-300 rounded-[12px] text-xs sm:text-sm text-neutral-900 focus:outline-none focus:border-[#0073ff]"
               />
             </div>
 
@@ -148,7 +148,7 @@ export function AuthPlaceholderModal({
                   }}
                   className={`py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
                     role === 'customer'
-                      ? 'bg-[#8b3dff] text-white'
+                      ? 'bg-[#0073ff] text-white'
                       : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
                   }`}
                 >
@@ -184,7 +184,7 @@ export function AuthPlaceholderModal({
           <button
             type="button"
             onClick={() => setIsRegister(!isRegister)}
-            className="text-[#8b3dff] font-bold hover:underline cursor-pointer"
+            className="text-[#0073ff] font-bold hover:underline cursor-pointer"
           >
             {isRegister
               ? 'আগে থেকেই অ্যাকাউন্ট আছে? লগইন করুন'

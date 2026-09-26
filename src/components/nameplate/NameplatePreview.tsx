@@ -2,11 +2,14 @@
 
 import React from 'react';
 import { Template, NameplateSize, NameplateDesignState } from '@/types/nameplate';
+import { applyVariant, resolveSize } from '@/lib/template-utils';
 import { cn } from '@/lib/utils';
 
 interface NameplatePreviewProps {
   template: Template;
   size?: NameplateSize;
+  /** Colour version to display. Defaults to the design's first variant. */
+  variantId?: string;
   customValues?: Partial<NameplateDesignState>;
   className?: string;
   compact?: boolean;
@@ -16,13 +19,16 @@ interface NameplatePreviewProps {
 export function NameplatePreview({
   template,
   size,
+  variantId,
   customValues,
   className,
   compact = false,
   interactive = false
 }: NameplatePreviewProps) {
-  const currentSize = size || customValues?.size || template.supportedSizes[0] || '5:3';
-  const { style, textConfig, defaultValues } = template;
+  const active = variantId ? applyVariant(template, variantId) : template;
+  const currentSize = size || customValues?.size || active.supportedSizes[0] || '2:1';
+  const { style, textConfig, defaultValues } = active;
+  const sizeOption = resolveSize(active, currentSize, customValues?.customSize);
 
   const houseName = customValues?.houseName ?? defaultValues.houseName;
   const proprietor = customValues?.proprietor ?? defaultValues.proprietor;
@@ -40,17 +46,6 @@ export function NameplatePreview({
   const customColors = customValues?.colors;
   const textColor = customColors?.textColor || textConfig.houseName.color;
   const accentColor = customColors?.accentColor || style.accentLineColor;
-
-  // Aspect ratio calculations:
-  // 5:3 = 5/3 = 1.6667 (aspect-[5/3])
-  // 4:2 = 2/1 = 2.0 (aspect-[2/1])
-  // 4:3 = 4/3 = 1.3333 (aspect-[4/3])
-  const aspectClass =
-    currentSize === '4:2'
-      ? 'aspect-[2/1]'
-      : currentSize === '4:3'
-      ? 'aspect-[4/3]'
-      : 'aspect-[5/3]';
 
   // Scale classes for typography
   let scaleClass = compact
@@ -113,11 +108,11 @@ export function NameplatePreview({
     <div
       className={cn(
         'relative w-full overflow-hidden transition-all duration-300 select-none flex flex-col justify-between',
-        aspectClass,
         interactive && 'hover:scale-[1.01]',
         className
       )}
       style={{
+        aspectRatio: `${sizeOption.width} / ${sizeOption.height}`,
         background: style.background,
         borderColor: style.borderColor || 'transparent',
         borderWidth: style.borderWidth || '0px',

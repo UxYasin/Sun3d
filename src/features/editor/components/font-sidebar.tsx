@@ -47,7 +47,7 @@ export const FontSidebar = ({
               size="lg"
               className={cn(
                 "w-full h-16 justify-between text-left items-center",
-                value === font && "border-2 border-[#8b3dff] bg-[#faf5ff]",
+                value === font && "border-2 border-[#0073ff] bg-[#f0f7ff]",
               )}
               style={{
                 fontSize: "15px",

@@ -4,10 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/common/Header';
 import { HeroSection } from '@/components/home/HeroSection';
-import { CanvaFeaturesSection } from '@/components/home/CanvaFeaturesSection';
 import { TemplateGallery } from '@/components/home/TemplateGallery';
-import { SizeGuideSection } from '@/components/home/SizeGuideSection';
-import { HowItWorksSection } from '@/components/home/HowItWorksSection';
 import { Footer } from '@/components/common/Footer';
 import { AuthPlaceholderModal } from '@/components/common/AuthPlaceholderModal';
 import { Template, NameplateSize } from '@/types/nameplate';
@@ -33,7 +30,7 @@ export default function HomePage() {
 
   const handleHeroSelectTemplate = (templateId: string) => {
     const tpl = MOCK_TEMPLATES.find((t) => t.id === templateId) || MOCK_TEMPLATES[0];
-    handleStartCustomization(tpl, tpl.supportedSizes[0] || '5:3');
+    handleStartCustomization(tpl, tpl.supportedSizes[0] || '2:1');
   };
 
   const handleStartCustomization = (template: Template, size: NameplateSize) => {
@@ -78,17 +75,8 @@ export default function HomePage() {
           onSelectTemplate={handleHeroSelectTemplate}
         />
 
-        {/* Canva Screenshot 2: Tools to power your best work */}
-        <CanvaFeaturesSection onExploreClick={scrollToTemplates} />
-
-        {/* Canva Screenshot 3 & 4: Templates for absolutely anything */}
+        {/* Templates for absolutely anything */}
         <TemplateGallery onStartCustomization={handleStartCustomization} />
-
-        {/* Precise Architectural Sizes */}
-        <SizeGuideSection />
-
-        {/* Effortless 4-Step Process */}
-        <HowItWorksSection onStartClick={scrollToTemplates} />
       </main>
 
       {/* Canva Dark Clean Footer */}

@@ -212,17 +212,16 @@ export type BuildEditorProps = {
 
 export interface BevelEmbossConfig {
   enabled: boolean;
-  style: "inner-bevel" | "outer-bevel" | "emboss";
-  technique: "smooth" | "chisel-hard";
-  depth: number; // percentage, e.g. 215
-  size: number; // px, e.g. 10
-  soften: number; // px, e.g. 1
-  angle: number; // degrees, e.g. 90
-  altitude: number; // degrees, e.g. 30
-  highlightColor: string; // e.g. "#ffffff"
-  highlightOpacity: number; // e.g. 0.5
-  shadowColor: string; // e.g. "#d97706" or "#000000"
-  shadowOpacity: number; // e.g. 0.5
+  mode: "engrave" | "emboss"; // carved into the plate vs raised off it
+  size: number; // px - width of the bevel
+  soften: number; // px - blur applied to the shading
+  depth: number; // % - how hard the normals tilt
+  altitude: number; // degrees - light elevation (1-89)
+  angle: number; // degrees - light direction (0 = right, 90 = top)
+  highlightColor: string;
+  highlightOpacity: number; // 0-1
+  shadowColor: string;
+  shadowOpacity: number; // 0-1
 }
 
 export interface Editor {
@@ -267,7 +266,10 @@ export interface Editor {
   getActiveFontFamily: () => string;
   changeFontFamily: (value: string) => void;
   addText: (value: string, options?: ITextboxOptions) => void;
-  changeBevelEmboss: (config: Partial<BevelEmbossConfig>) => void;
+  changeBevelEmboss: (
+    config: Partial<BevelEmbossConfig>,
+    commit?: boolean
+  ) => void;
   getActiveBevelEmboss: () => BevelEmbossConfig;
   getActiveOpacity: () => number;
   changeOpacity: (value: number) => void;

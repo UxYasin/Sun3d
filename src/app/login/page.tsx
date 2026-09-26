@@ -52,7 +52,7 @@ function LoginFormContent() {
     <div className="w-full max-w-md bg-white rounded-[24px] border border-neutral-200 p-6 sm:p-8 font-sans">
       <div className="text-center mb-6">
         <span className="text-2xl font-black text-neutral-950 font-serif italic block mb-2">
-          Sun<span className="text-[#8b3dff] not-italic font-sans">3D</span>
+          Sun<span className="text-[#0073ff] not-italic font-sans">3D</span>
         </span>
         <h1 className="text-xl sm:text-2xl font-bold text-neutral-950">
           লগইন করুন
@@ -86,7 +86,7 @@ function LoginFormContent() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@example.com"
-              className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-300 rounded-[12px] text-xs sm:text-sm text-neutral-900 focus:outline-none focus:border-[#8b3dff]"
+              className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-300 rounded-[12px] text-xs sm:text-sm text-neutral-900 focus:outline-none focus:border-[#0073ff]"
             />
           </div>
 
@@ -100,7 +100,7 @@ function LoginFormContent() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-300 rounded-[12px] text-xs sm:text-sm text-neutral-900 focus:outline-none focus:border-[#8b3dff]"
+              className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-300 rounded-[12px] text-xs sm:text-sm text-neutral-900 focus:outline-none focus:border-[#0073ff]"
             />
           </div>
 
@@ -115,7 +115,7 @@ function LoginFormContent() {
                 onClick={() => handleQuickFill('customer')}
                 className={`py-2 px-3 rounded-full text-xs font-bold transition-all cursor-pointer ${
                   role === 'customer'
-                    ? 'bg-[#8b3dff] text-white'
+                    ? 'bg-[#0073ff] text-white'
                     : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
                 }`}
               >
@@ -148,8 +148,8 @@ function LoginFormContent() {
       <div className="mt-6 pt-4 border-t border-neutral-100 text-center text-xs text-neutral-500">
         কোনো অ্যাকাউন্ট নেই?{' '}
         <Link
-          href={`/register${templateId ? `?templateId=${templateId}&size=${size || '5:3'}` : ''}`}
-          className="text-[#8b3dff] font-bold hover:underline"
+          href={`/register${templateId ? `?templateId=${templateId}&size=${size || '2:1'}` : ''}`}
+          className="text-[#0073ff] font-bold hover:underline"
         >
           নতুন অ্যাকাউন্ট খুলুন
         </Link>

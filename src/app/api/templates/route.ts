@@ -23,6 +23,9 @@ export async function GET() {
       textConfig: typeof r.text_config === 'string' ? JSON.parse(r.text_config) : r.text_config,
       editableFields: r.editable_fields,
       defaultValues: typeof r.default_values === 'string' ? JSON.parse(r.default_values) : r.default_values,
+      sizes: typeof r.sizes === 'string' ? JSON.parse(r.sizes) : r.sizes || [],
+      variants: typeof r.variants === 'string' ? JSON.parse(r.variants) : r.variants || [],
+      layout: typeof r.layout === 'string' ? JSON.parse(r.layout) : r.layout || [],
       createdAt: r.created_at || new Date().toISOString()
     }));
 
@@ -41,9 +44,11 @@ export async function POST(request: Request) {
     const sql = `
       INSERT INTO public.templates (
         id, name, category, supported_sizes, thumbnail, description, material,
-        price_starting_at, badge, enabled, style, text_config, editable_fields, default_values, created_at, updated_at
+        price_starting_at, badge, enabled, style, text_config, editable_fields, default_values,
+        sizes, variants, layout, created_at, updated_at
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW()
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
+        $15, $16, $17, NOW(), NOW()
       )
       ON CONFLICT (id) DO UPDATE SET
         name = EXCLUDED.name,
@@ -59,6 +64,9 @@ export async function POST(request: Request) {
         text_config = EXCLUDED.text_config,
         editable_fields = EXCLUDED.editable_fields,
         default_values = EXCLUDED.default_values,
+        sizes = EXCLUDED.sizes,
+        variants = EXCLUDED.variants,
+        layout = EXCLUDED.layout,
         updated_at = NOW()
       RETURNING *;
     `;
@@ -67,7 +75,7 @@ export async function POST(request: Request) {
       id,
       tpl.name,
       tpl.category || 'General',
-      tpl.supportedSizes || ['4:2'],
+      tpl.supportedSizes || ['2:1', '1:1', '4:1'],
       tpl.thumbnail || '',
       tpl.description || '',
       tpl.material || '',
@@ -78,6 +86,9 @@ export async function POST(request: Request) {
       JSON.stringify(tpl.textConfig || {}),
       tpl.editableFields || ['houseName', 'proprietor', 'address', 'holdingNumber'],
       JSON.stringify(tpl.defaultValues || {}),
+      JSON.stringify(tpl.sizes || []),
+      JSON.stringify(tpl.variants || []),
+      JSON.stringify(tpl.layout || []),
     ];
 
     const rows = await query<any>(sql, values);

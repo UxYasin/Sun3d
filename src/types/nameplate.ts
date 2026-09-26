@@ -1,4 +1,54 @@
-export type NameplateSize = '5:3' | '4:2' | '4:3';
+/**
+ * The canonical set, plus any extra size an admin defines on a design
+ * (`(string & {})` keeps the literals in autocomplete while allowing those).
+ */
+export type NameplateSize = '2:1' | '1:1' | '4:1' | 'custom' | (string & {});
+
+export interface SizeOption {
+  id: string;
+  label: string;
+  width: number;
+  height: number;
+}
+
+/** The sizes every design offers out of the box. */
+export const STANDARD_SIZES: SizeOption[] = [
+  { id: '2:1', label: '2:1', width: 1200, height: 600 },
+  { id: '1:1', label: '1:1', width: 900, height: 900 },
+  { id: '4:1', label: '4:1', width: 1600, height: 400 },
+];
+
+export interface CustomSize {
+  width: number;
+  height: number;
+}
+
+/** A colour version of a design (background + text colours). */
+export interface TemplateVariant {
+  id: string;
+  name: string;
+  background: string;
+  textColor: string;
+  accentColor?: string;
+  thumbnail?: string;
+}
+
+/** One text layer the design places on the canvas. */
+export interface DesignTextLayer {
+  key: string;
+  text: string;
+  left: number;
+  top: number;
+  width: number;
+  fontSize: number;
+  fontFamily: string;
+  fontWeight: number;
+  fill: string;
+  /** Which colour of the active variant drives `fill`. */
+  colorKey?: 'text' | 'accent';
+  scaleX?: number;
+  scaleY?: number;
+}
 
 export type TemplateCategory =
   | 'Modern Acrylic'
@@ -75,6 +125,12 @@ export interface Template {
     address: string;
     holdingNumber: string;
   };
+  /** Extra sizes this design offers, beyond the standards. */
+  sizes?: SizeOption[];
+  /** Colour versions of this design. */
+  variants?: TemplateVariant[];
+  /** How the design is composed on the canvas. */
+  layout?: DesignTextLayer[];
   createdAt: string;
 }
 
@@ -114,6 +170,8 @@ export interface NameplateDesignState {
   id?: string;
   templateId: string;
   size: NameplateSize;
+  customSize?: CustomSize;
+  variantId?: string;
   houseName: string;
   proprietor: string;
   address: string;
@@ -160,6 +218,8 @@ export interface CustomerDesign {
   userId: string;
   templateId: string;
   size: NameplateSize;
+  customSize?: CustomSize;
+  variantId?: string;
   houseName: string;
   proprietor: string;
   address: string;
@@ -185,6 +245,8 @@ export interface CustomerOrder {
   designId: string;
   templateId: string;
   size: NameplateSize;
+  customSize?: CustomSize;
+  variantId?: string;
   houseName: string;
   proprietor: string;
   address: string;

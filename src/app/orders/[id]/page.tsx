@@ -95,7 +95,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         <div className="bg-white rounded-[20px] p-6 sm:p-8 border border-neutral-200 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-neutral-100">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-[#8b3dff]">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#0073ff]">
                 লাইভ ট্র্যাকিং
               </span>
               <h1 className="text-2xl font-bold text-neutral-950 mt-0.5">
@@ -129,13 +129,13 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs transition-all ${
                       isPast
-                        ? 'bg-[#8b3dff] text-white'
+                        ? 'bg-[#0073ff] text-white'
                         : 'bg-neutral-100 text-neutral-400 border border-neutral-200'
                     }`}
                   >
                     {idx + 1}
                   </div>
-                  <h4 className={`text-xs font-bold mt-2.5 ${isCurrent ? 'text-[#8b3dff]' : 'text-neutral-800'}`}>
+                  <h4 className={`text-xs font-bold mt-2.5 ${isCurrent ? 'text-[#0073ff]' : 'text-neutral-800'}`}>
                     {step.label}
                   </h4>
                   <p className="text-[11px] text-neutral-500 mt-0.5 leading-snug">
@@ -148,9 +148,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
           {/* Re-enter TrxID CTA if Unpaid or Rejected */}
           {(order.paymentStatus === 'unpaid' || order.paymentStatus === 'rejected') && (
-            <div className="mt-8 pt-6 border-t border-neutral-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#faf5ff] p-4 rounded-[16px]">
+            <div className="mt-8 pt-6 border-t border-neutral-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#f0f7ff] p-4 rounded-[16px]">
               <div>
-                <h4 className="text-xs font-bold text-[#8b3dff]">পেমেন্ট সম্পন্ন করুন</h4>
+                <h4 className="text-xs font-bold text-[#0073ff]">পেমেন্ট সম্পন্ন করুন</h4>
                 <p className="text-xs text-neutral-600 mt-0.5">বিকাশ বা নগদে টাকা পাঠিয়ে TrxID সাবমিট করুন।</p>
               </div>
               <button

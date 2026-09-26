@@ -79,7 +79,7 @@ export const RemoveBgSidebar = ({
             <Button
               disabled={isLoading}
               onClick={onClick}
-              className="w-full bg-[#8b3dff] hover:bg-[#7828e8]"
+              className="w-full bg-[#0073ff] hover:bg-[#0059cc]"
             >
               {isLoading ? <Loader className="size-4 animate-spin mr-2" /> : <Sparkles className="size-4 mr-2" />}
               ব্যাকগ্রাউন্ড রিমুভ করুন

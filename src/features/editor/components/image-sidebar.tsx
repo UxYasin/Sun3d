@@ -66,7 +66,7 @@ export const ImageSidebar = ({ editor, activeTool, onChangeActiveTool }: ImageSi
         />
         <Button
           onClick={() => fileInputRef.current?.click()}
-          className="w-full bg-[#8b3dff] hover:bg-[#7828e8] text-white flex items-center justify-center gap-2"
+          className="w-full bg-[#0073ff] hover:bg-[#0059cc] text-white flex items-center justify-center gap-2"
         >
           <Upload className="size-4" />
           ছবি আপলোড করুন (Upload Image)

@@ -84,7 +84,7 @@ export const TextSidebar = ({
               বাংলা ফন্ট (SutonnyMJ ANSI)
             </div>
             <Button
-              className="w-full h-16 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 hover:bg-purple-100 text-purple-900 justify-between px-4"
+              className="w-full h-16 bg-gradient-to-r from-blue-50 to-sky-50 border border-blue-200 hover:bg-blue-100 text-blue-900 justify-between px-4"
               variant="outline"
               size="lg"
               onClick={() => editor?.addText("রহমান ভিলা", {
@@ -95,7 +95,7 @@ export const TextSidebar = ({
             >
               <div className="flex flex-col text-left">
                 <span className="font-bold text-base">বাংলা নেমপ্লেট (সুতোন্বী)</span>
-                <span className="text-[11px] text-purple-700">ইউনিকোড টাইপ করলে অটো সুতোন্বী হবে</span>
+                <span className="text-[11px] text-blue-700">ইউনিকোড টাইপ করলে অটো সুতোন্বী হবে</span>
               </div>
               <span className="text-2xl font-bold font-['SutonnyMJ']">
                 ingvb wfjv

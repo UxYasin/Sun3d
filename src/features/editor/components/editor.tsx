@@ -97,6 +97,10 @@ export const Editor = ({ initialData, onSave, onOrder }: EditorProps) => {
   const canvasRef = useRef(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Toolbars are keyed on the active object so their local controls re-read the
+  // selection's own properties when it changes.
+  const activeObjectKey = JSON.stringify(editor?.canvas.getActiveObject());
+
   useEffect(() => {
     const canvas = new fabric.Canvas(canvasRef.current, {
       controlsAboveOverlay: true,
@@ -199,6 +203,7 @@ export const Editor = ({ initialData, onSave, onOrder }: EditorProps) => {
           onChangeActiveTool={onChangeActiveTool}
         />
         <BevelEmbossSidebar
+          key={activeObjectKey}
           editor={editor}
           activeTool={activeTool}
           onChangeActiveTool={onChangeActiveTool}
@@ -208,7 +213,7 @@ export const Editor = ({ initialData, onSave, onOrder }: EditorProps) => {
             editor={editor}
             activeTool={activeTool}
             onChangeActiveTool={onChangeActiveTool}
-            key={JSON.stringify(editor?.canvas.getActiveObject())}
+            key={activeObjectKey}
           />
           <div className="flex-1 h-[calc(100%-124px)] bg-muted" ref={containerRef}>
             <canvas ref={canvasRef} />

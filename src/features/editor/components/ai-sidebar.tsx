@@ -72,7 +72,7 @@ export const AiSidebar = ({
           <Button
             disabled={isLoading}
             type="submit"
-            className="w-full bg-[#8b3dff] hover:bg-[#7828e8]"
+            className="w-full bg-[#0073ff] hover:bg-[#0059cc]"
           >
             {isLoading ? <Loader className="size-4 animate-spin mr-2" /> : <Sparkles className="size-4 mr-2" />}
             জেনারেট করুন

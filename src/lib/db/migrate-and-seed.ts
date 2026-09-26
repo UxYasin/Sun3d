@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { Client } from 'pg';
 import { MOCK_TEMPLATES } from '../../data/mock-templates';
+import { normalizeTemplate } from '../template-utils';
 import { DEMO_USERS } from '../../lib/auth-context';
 import { DEFAULT_PAYMENT_SETTINGS, DEFAULT_BUSINESS_SETTINGS } from '../../lib/order-store';
 
@@ -28,14 +29,17 @@ async function migrateAndSeed() {
     await client.query(schemaSql);
     console.log('✓ Schema tables and indices created.');
 
-    // 2. Seed Templates
-    console.log('--- Seeding 14 Physical Templates ---');
+    // 2. Seed Designs (each carrying sizes, colour variants and a layout)
+    console.log(`--- Seeding ${MOCK_TEMPLATES.length} Design(s) ---`);
     for (const tpl of MOCK_TEMPLATES) {
+      const design = normalizeTemplate(tpl);
       await client.query(
         `INSERT INTO public.templates (
           id, name, category, supported_sizes, thumbnail, description, material,
-          price_starting_at, badge, enabled, style, text_config, editable_fields, default_values
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+          price_starting_at, badge, enabled, style, text_config, editable_fields, default_values,
+          sizes, variants, layout
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
+          $15, $16, $17)
         ON CONFLICT (id) DO UPDATE SET
           name = EXCLUDED.name,
           category = EXCLUDED.category,
@@ -47,26 +51,32 @@ async function migrateAndSeed() {
           style = EXCLUDED.style,
           text_config = EXCLUDED.text_config,
           default_values = EXCLUDED.default_values,
+          sizes = EXCLUDED.sizes,
+          variants = EXCLUDED.variants,
+          layout = EXCLUDED.layout,
           updated_at = NOW();`,
         [
-          tpl.id,
-          tpl.name,
-          tpl.category,
-          tpl.supportedSizes,
-          tpl.thumbnail,
-          tpl.description,
-          tpl.material,
-          tpl.priceStartingAt,
-          tpl.badge || null,
-          tpl.enabled ?? true,
-          JSON.stringify(tpl.style),
-          JSON.stringify(tpl.textConfig),
-          tpl.editableFields,
-          JSON.stringify(tpl.defaultValues)
+          design.id,
+          design.name,
+          design.category,
+          design.supportedSizes,
+          design.thumbnail,
+          design.description,
+          design.material,
+          design.priceStartingAt,
+          design.badge || null,
+          design.enabled ?? true,
+          JSON.stringify(design.style),
+          JSON.stringify(design.textConfig),
+          design.editableFields,
+          JSON.stringify(design.defaultValues),
+          JSON.stringify(design.sizes || []),
+          JSON.stringify(design.variants || []),
+          JSON.stringify(design.layout || [])
         ]
       );
     }
-    console.log(`✓ Seeded ${MOCK_TEMPLATES.length} templates successfully.`);
+    console.log(`✓ Seeded ${MOCK_TEMPLATES.length} design(s) successfully.`);
 
     // 3. Seed Profiles (Demo Users)
     console.log('--- Seeding User Profiles ---');

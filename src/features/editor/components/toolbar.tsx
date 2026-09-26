@@ -81,6 +81,8 @@ export const Toolbar = ({
 
   const isText = isTextType(selectedObjectType);
   const isImage = selectedObjectType === "image";
+  const isBevelable =
+    !!selectedObject && !isImage && selectedObjectType !== "group";
 
   const onStretchWidth = (delta: number) => {
     if (!selectedObject) return;
@@ -331,16 +333,15 @@ export const Toolbar = ({
           </Hint>
         </div>
       )}
-      {isText && (
+      {isBevelable && (
         <div className="flex items-center h-full justify-center">
-          <Hint label="Bevel & Emboss (৩ডি বেভেল)" side="bottom" sideOffset={5}>
+          <Hint label="Bevel & Emboss (বেভেল ও এমবস)" side="bottom" sideOffset={5}>
             <Button
               onClick={() => onChangeActiveTool("bevel-emboss")}
               size="icon"
               variant="ghost"
               className={cn(
-                activeTool === "bevel-emboss" && "bg-purple-100 text-[#8b3dff]",
-                editor?.getActiveBevelEmboss()?.enabled && "text-[#8b3dff]"
+                activeTool === "bevel-emboss" && "bg-gray-100"
               )}
             >
               <Sparkles className="size-4" />
