@@ -132,6 +132,14 @@ export function NameplatePreview({
       {renderStandoffScrew('bottom-left')}
       {renderStandoffScrew('bottom-right')}
 
+      {/* Optional Frame / Texture Background Overlay */}
+      {style.textureOverlay && (
+        <div
+          className="absolute inset-0 z-0 bg-center bg-cover bg-no-repeat pointer-events-none"
+          style={{ backgroundImage: `url(${style.textureOverlay})` }}
+        />
+      )}
+
       {/* Surface Sheen / Gloss Overlay */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.04] to-white/[0.12] z-10" />
 
@@ -142,7 +150,7 @@ export function NameplatePreview({
       <div
         className={cn(
           'relative z-10 h-full w-full flex flex-col justify-between',
-          compact ? 'p-3.5 sm:p-4' : 'p-5 sm:p-8'
+          compact ? 'p-3 sm:p-3.5' : 'p-4 sm:p-6'
         )}
       >
         {/* Top Header Row (Holding Number Badge / Tag) */}
@@ -180,6 +188,7 @@ export function NameplatePreview({
               scaleClass
             )}
             style={{
+              fontFamily: (fontFamily && !['serif', 'sans', 'mono'].includes(fontFamily)) ? fontFamily : undefined,
               color: textColor,
               textTransform: textConfig.houseName.textTransform || 'none'
             }}
@@ -217,7 +226,10 @@ export function NameplatePreview({
                 textConfig.proprietor.fontWeight,
                 compact ? 'text-[10px] sm:text-[11px]' : 'text-xs sm:text-sm'
               )}
-              style={{ color: textColor || textConfig.proprietor.color }}
+              style={{
+                fontFamily: (textConfig.proprietor.fontFamily && !['serif', 'sans', 'mono'].includes(textConfig.proprietor.fontFamily)) ? textConfig.proprietor.fontFamily : undefined,
+                color: textColor || textConfig.proprietor.color
+              }}
             >
               {textConfig.proprietor.prefix && (
                 <span className="opacity-80 mr-1 font-normal">{textConfig.proprietor.prefix}</span>
@@ -235,7 +247,10 @@ export function NameplatePreview({
                 'truncate opacity-90 tracking-wide',
                 compact ? 'text-[8px] sm:text-[9px]' : 'text-[10px] sm:text-xs'
               )}
-              style={{ color: textConfig.address.color }}
+              style={{
+                fontFamily: (textConfig.address.fontFamily && !['serif', 'sans', 'mono'].includes(textConfig.address.fontFamily)) ? textConfig.address.fontFamily : undefined,
+                color: textConfig.address.color
+              }}
             >
               {address}
             </p>

@@ -479,6 +479,55 @@ export class OrderStoreService {
     return updated;
   }
 
+  static createTemplate(newTpl: Template): Template[] {
+    const tpls = this.getAdminTemplates();
+    const updated = [newTpl, ...tpls];
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEYS.ADMIN_TEMPLATES, JSON.stringify(updated));
+
+      // Asynchronously insert to Supabase
+      fetch('/api/templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newTpl)
+      }).catch((e) => console.warn('Background Supabase createTemplate error:', e));
+    }
+    return updated;
+  }
+
+  static duplicateTemplate(templateId: string): Template[] {
+    const tpls = this.getAdminTemplates();
+    const source = tpls.find((t) => t.id === templateId);
+    if (!source) return tpls;
+
+    const copyId = `tpl-${Date.now()}`;
+    const duplicated: Template = {
+      ...source,
+      id: copyId,
+      name: `${source.name} (Copy)`,
+      createdAt: new Date().toISOString(),
+      badge: 'New'
+    };
+
+    return this.createTemplate(duplicated);
+  }
+
+  static deleteTemplate(templateId: string): Template[] {
+    const tpls = this.getAdminTemplates();
+    const updated = tpls.filter((t) => t.id !== templateId);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEYS.ADMIN_TEMPLATES, JSON.stringify(updated));
+
+      // Soft disable in Supabase
+      fetch(`/api/templates/${encodeURIComponent(templateId)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: false })
+      }).catch((e) => console.warn('Background Supabase deleteTemplate error:', e));
+    }
+    return updated;
+  }
+
   // --- PAYMENT SETTINGS ---
   static getPaymentSettings(): PaymentSettings {
     if (typeof window === 'undefined') return DEFAULT_PAYMENT_SETTINGS;

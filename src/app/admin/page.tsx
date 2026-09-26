@@ -43,7 +43,10 @@ import {
   TrendingUp,
   Sliders,
   DollarSign,
-  Truck
+  Truck,
+  Copy,
+  Plus,
+  Trash2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -162,6 +165,63 @@ function AdminMain() {
     const updated = OrderStoreService.toggleTemplateEnabled(tplId);
     setTemplates(updated);
     showToast('Template visibility updated.');
+  };
+
+  const handleDuplicateTemplate = (tplId: string) => {
+    const updated = OrderStoreService.duplicateTemplate(tplId);
+    setTemplates(updated);
+    showToast('Template successfully duplicated!');
+  };
+
+  const handleDeleteTemplate = (tplId: string) => {
+    if (confirm('Are you sure you want to delete this template?')) {
+      const updated = OrderStoreService.deleteTemplate(tplId);
+      setTemplates(updated);
+      showToast('Template removed from system.');
+    }
+  };
+
+  const handleCreateTemplate = () => {
+    const newId = `tpl-${Date.now()}`;
+    const newTpl: Template = {
+      id: newId,
+      name: `নতুন ৩ডি ফ্রেম ডিজাইন (${new Date().toLocaleDateString()})`,
+      category: 'Royal Brass & Slate',
+      supportedSizes: ['4:2'],
+      thumbnail: '/templates/golden-frame-border.png',
+      description: 'কাস্টম গোল্ডেন ব্রাস ও এক্রিলিক ৩ডি নামপ্লেট ডিজাইন।',
+      material: 'প্রিমিয়াম এক্রিলিক + ৩ডি মেটালিক লেটারিং',
+      priceStartingAt: 3500,
+      badge: 'New',
+      enabled: true,
+      style: {
+        background: '#006d03',
+        textureOverlay: '/templates/golden-frame-border.png',
+        borderColor: '#d4af37',
+        borderWidth: '0px',
+        borderRadius: '8px',
+        standoffScrewType: 'gold-cap',
+        materialFinish: 'gloss'
+      },
+      textConfig: {
+        houseName: { fontFamily: 'SutonnyMJ', fontSizeClass: 'text-4xl', fontWeight: 'bold', color: '#f5d061' },
+        proprietor: { fontFamily: 'SutonnyMJ', fontSizeClass: 'text-2xl', fontWeight: 'normal', color: '#f5d061' },
+        address: { fontFamily: 'SutonnyMJ', fontSizeClass: 'text-sm', color: '#f5d061' },
+        holdingNumber: { fontFamily: 'SutonnyMJ', fontSizeClass: 'text-base', color: '#f5d061' }
+      },
+      editableFields: ['houseName', 'proprietor', 'address', 'holdingNumber'],
+      defaultValues: {
+        houseName: 'mvwgDj nvmvb feb',
+        proprietor: '†cªvt kvn Avjg',
+        address: 'wcZvt g…Z nvi“b Ai iwk` • Mªvgt `wonvBigviv, ivqcyiv, biwms`x|',
+        holdingNumber: 'wemwgj­vwni ivngvwbi ivwng'
+      },
+      createdAt: new Date().toISOString()
+    };
+
+    const updated = OrderStoreService.createTemplate(newTpl);
+    setTemplates(updated);
+    showToast('New template created and added to system!');
   };
 
   const handleSavePaymentSettings = (e: React.FormEvent) => {
@@ -703,13 +763,23 @@ function AdminMain() {
       {/* ============================================================ */}
       {activeTab === 'templates' && (
         <div className="space-y-6 animate-fade-in">
-          <div>
-            <h3 className="font-black text-base text-neutral-900 dark:text-white">
-              Templates Catalog Management ({templates.length})
-            </h3>
-            <p className="text-xs text-neutral-500">
-              Toggle visibility, edit display names, categories, and featured badges.
-            </p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="font-black text-base text-neutral-900 dark:text-white">
+                Templates Catalog Management ({templates.length})
+              </h3>
+              <p className="text-xs text-neutral-500">
+                Create new templates, duplicate designs, toggle visibility, and update prices.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleCreateTemplate}
+              className="px-4 py-2 bg-[#8b3dff] hover:bg-[#7828e8] text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm self-start sm:self-auto cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Create New Template</span>
+            </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -724,7 +794,7 @@ function AdminMain() {
                       {tpl.name}
                     </h4>
                     {tpl.badge && (
-                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#8b3dff] text-neutral-950">
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#8b3dff] text-white">
                         {tpl.badge}
                       </span>
                     )}
@@ -737,7 +807,15 @@ function AdminMain() {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    title="Duplicate Template"
+                    onClick={() => handleDuplicateTemplate(tpl.id)}
+                    className="p-2 rounded-xl text-xs font-bold transition-all border border-neutral-200 hover:bg-neutral-100 text-neutral-600 dark:border-neutral-800 dark:hover:bg-zinc-800 dark:text-neutral-300"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                  </button>
                   <button
                     type="button"
                     onClick={() => handleToggleTemplate(tpl.id)}
@@ -749,6 +827,14 @@ function AdminMain() {
                     )}
                   >
                     {tpl.enabled !== false ? 'Enabled' : 'Disabled'}
+                  </button>
+                  <button
+                    type="button"
+                    title="Delete Template"
+                    onClick={() => handleDeleteTemplate(tpl.id)}
+                    className="p-2 rounded-xl text-xs font-bold transition-all border border-red-200 hover:bg-red-50 text-red-600 dark:border-red-950/50 dark:hover:bg-red-950/30"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>

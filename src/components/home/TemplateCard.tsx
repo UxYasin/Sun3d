@@ -44,13 +44,24 @@ export function TemplateCard({ template, onSelect }: TemplateCardProps) {
           </div>
         )}
 
-        {/* Nameplate Live Simulation */}
-        <div className="w-full max-w-[300px] my-auto transition-transform group-hover:scale-[1.02]">
-          <NameplatePreview
-            template={template}
-            size={activeSize}
-            compact={true}
-          />
+        {/* Nameplate Photo Thumbnail or Live Simulation */}
+        <div className="w-full max-w-[320px] my-auto transition-transform group-hover:scale-[1.02] flex items-center justify-center">
+          {template.thumbnail ? (
+            <div className="relative w-full aspect-[2/1] rounded-xl overflow-hidden shadow-sm border border-neutral-200/80 bg-neutral-900">
+              <img
+                src={template.thumbnail}
+                alt={template.name}
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            </div>
+          ) : (
+            <NameplatePreview
+              template={template}
+              size={activeSize}
+              compact={true}
+            />
+          )}
         </div>
       </div>
 

@@ -22,12 +22,8 @@ export function TemplateGallery({ onStartCustomization }: TemplateGalleryProps) 
 
   // Category labels in natural Bengali
   const categories = [
-    { id: 'All', label: 'সব টেমপ্লেট' },
-    { id: 'Modern', label: 'মডার্ন এক্রিলিক' },
-    { id: 'Natural', label: 'সলিড সেগুন কাঠ' },
-    { id: 'Heritage', label: 'হেরিটেজ ও ব্রাস' },
-    { id: 'Minimal', label: 'মিনিমালিস্ট' },
-    { id: 'Marble', label: 'মার্বেল ও স্টোন' }
+    { id: 'All', label: 'সব ডিজাইন (All)' },
+    { id: 'Royal Brass & Slate', label: 'রয়্যাল ফ্রেম (Royal Frame)' },
   ];
 
   // Filtering Logic
@@ -64,7 +60,7 @@ export function TemplateGallery({ onStartCustomization }: TemplateGalleryProps) 
 
   const handleStartDesigningFast = () => {
     const defaultTemplate = MOCK_TEMPLATES[0];
-    onStartCustomization(defaultTemplate, '5:3');
+    onStartCustomization(defaultTemplate, '4:2');
   };
 
   return (

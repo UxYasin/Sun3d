@@ -43,28 +43,38 @@ export function TemplateDetailModal({
         {/* Left Side: Large Preview (Matching Canva Screenshot 4) */}
         <div className="md:w-7/12 bg-[#f8f9fa] p-6 sm:p-10 flex items-center justify-center border-b md:border-b-0 md:border-r border-neutral-100">
           <div className="w-full max-w-md">
-            <NameplatePreview
-              template={template}
-              size={activeSize}
-              customValues={{
-                templateId: template.id,
-                size: activeSize,
-                houseName: 'খান ভিলা (Khan Villa)',
-                proprietor: 'এম. এ. রফিক খান',
-                address: 'বাড়ি নং ১২, রোড ৪, ধানমন্ডি, ঢাকা',
-                holdingNumber: '৭২/বি',
-                typography: {
-                  fontFamily: 'serif',
-                  fontWeight: 'bold',
-                  textAlign: 'center',
-                  fontSizeScale: 'standard'
-                },
-                colors: {
-                  textColor: template.textConfig.houseName.color,
-                  accentColor: template.style.accentLineColor
-                }
-              }}
-            />
+            {template.thumbnail ? (
+              <div className="relative w-full aspect-[2/1] rounded-2xl overflow-hidden shadow-lg border border-neutral-200 bg-neutral-900">
+                <img
+                  src={template.thumbnail}
+                  alt={template.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <NameplatePreview
+                template={template}
+                size={activeSize}
+                customValues={{
+                  templateId: template.id,
+                  size: activeSize,
+                  houseName: 'খান ভিলা (Khan Villa)',
+                  proprietor: 'এম. এ. রফিক খান',
+                  address: 'বাড়ি নং ১২, রোড ৪, ধানমন্ডি, ঢাকা',
+                  holdingNumber: '৭২/বি',
+                  typography: {
+                    fontFamily: 'serif',
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                    fontSizeScale: 'standard'
+                  },
+                  colors: {
+                    textColor: template.textConfig.houseName.color,
+                    accentColor: template.style.accentLineColor
+                  }
+                }}
+              />
+            )}
           </div>
         </div>
 
