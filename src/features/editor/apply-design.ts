@@ -1,5 +1,10 @@
-import { Editor } from '@/features/editor/types';
-import { CustomSize, SizeOption, Template } from '@/types/nameplate';
+import type { Editor } from '@/features/editor/types';
+import type {
+  CustomSize,
+  SizeOption,
+  Template,
+  TemplateVariant,
+} from '@/types/nameplate';
 import {
   getTemplateLayout,
   getVariant,
@@ -7,7 +12,40 @@ import {
   resolveSize,
 } from '@/lib/template-utils';
 
-/** Design layout coordinates are authored against this canvas. */
+/**
+ * Deliberately no `fabric` import here: this module is reached from
+ * server-rendered components, and pulling Fabric in would break the server
+ * bundle. The bits of canvas shape we touch are typed structurally.
+ */
+const isTextType = (type?: string) =>
+  type === 'text' || type === 'i-text' || type === 'textbox';
+
+interface Point {
+  x: number;
+  y: number;
+}
+
+interface WorkspaceLike {
+  width?: number;
+  height?: number;
+  getCenterPoint: () => Point;
+  set: (properties: Record<string, unknown>) => void;
+  setPositionByOrigin: (point: Point, originX: string, originY: string) => void;
+  setCoords: () => void;
+}
+
+interface CanvasObjectLike {
+  name?: string;
+  type?: string;
+  scaleX?: number;
+  scaleY?: number;
+  getCenterPoint: () => Point;
+  set: (properties: Record<string, unknown>) => void;
+  setPositionByOrigin: (point: Point, originX: string, originY: string) => void;
+  setCoords: () => void;
+}
+
+/** Layout coordinates for form-built designs are authored against this canvas. */
 export const LAYOUT_REFERENCE = { width: 1200, height: 600 };
 
 export interface ApplyDesignOptions {
@@ -21,11 +59,86 @@ export const designSize = (
   options: ApplyDesignOptions = {}
 ): SizeOption => resolveSize(template, options.sizeId, options.customSize);
 
+const findWorkspace = (editor: Editor) =>
+  editor.canvas.getObjects().find((object) => object.name === 'clip');
+
+const loadCanvasJson = (editor: Editor, json: string) =>
+  new Promise<void>((resolve, reject) => {
+    try {
+      editor.canvas.loadFromJSON(JSON.parse(json), () => resolve());
+    } catch (error) {
+      reject(error);
+    }
+  });
+
 /**
- * Composes a design onto the canvas: sizes the workspace, fills the background,
- * drops the texture overlay and re-creates every layout text layer scaled to
- * the chosen size. Works for any design, including ones built in the admin
- * panel — there is no per-design special casing.
+ * Loads a design that was drawn in the canvas editor, then scales it to the
+ * chosen size (about the workspace centre) and recolours it for the variant.
+ */
+const applyCanvasDesign = async (
+  editor: Editor,
+  template: Template,
+  size: SizeOption,
+  variant: TemplateVariant
+) => {
+  await loadCanvasJson(editor, template.canvasJson!);
+
+  const canvas = editor.canvas;
+  const workspace = findWorkspace(editor) as unknown as WorkspaceLike | undefined;
+
+  if (!workspace) return;
+
+  const authoredWidth = workspace.width || size.width;
+  const authoredHeight = workspace.height || size.height;
+  const scaleX = size.width / authoredWidth;
+  const scaleY = size.height / authoredHeight;
+  const workspaceCenter = workspace.getCenterPoint();
+
+  canvas.getObjects().slice().forEach((raw) => {
+    const object = raw as unknown as CanvasObjectLike;
+    if (object.name === 'clip') return;
+
+    const center = object.getCenterPoint();
+    object.set({
+      scaleX: (object.scaleX ?? 1) * scaleX,
+      scaleY: (object.scaleY ?? 1) * scaleY,
+    });
+    object.setPositionByOrigin(
+      {
+        x: workspaceCenter.x + (center.x - workspaceCenter.x) * scaleX,
+        y: workspaceCenter.y + (center.y - workspaceCenter.y) * scaleY,
+      },
+      'center',
+      'center'
+    );
+    object.setCoords();
+  });
+
+  // Resize the plate to the chosen ratio, then put it back where it was.
+  editor.changeSize({ width: size.width, height: size.height });
+  workspace.setPositionByOrigin(workspaceCenter, 'center', 'center');
+  workspace.setCoords();
+
+  // Recolour for the chosen colour version.
+  workspace.set({ fill: variant.background });
+  canvas.getObjects().forEach((object) => {
+    if (object.name === 'clip') return;
+    if (isTextType(object.type)) {
+      object.set({ fill: variant.textColor });
+    }
+  });
+
+  canvas.backgroundColor = variant.background;
+  canvas.discardActiveObject();
+  canvas.renderAll();
+};
+
+/**
+ * Composes a design onto the canvas.
+ *
+ * Designs drawn in the editor are replayed from their canvas JSON; form-built
+ * designs are composed from their layout. Either way the workspace is resized
+ * to the chosen ratio and the colours follow the chosen variant.
  */
 export const applyDesignToCanvas = async (
   editor: Editor,
@@ -52,8 +165,14 @@ export const applyDesignToCanvas = async (
     }
   });
 
-  editor.changeSize({ width: size.width, height: size.height });
   editor.changeBackground(variant.background);
+
+  if (template.canvasJson) {
+    await applyCanvasDesign(editor, template, size, variant);
+    return;
+  }
+
+  editor.changeSize({ width: size.width, height: size.height });
 
   if (template.style.textureOverlay) {
     editor.addImage(template.style.textureOverlay, { sendToBack: true });
@@ -81,4 +200,37 @@ export const applyDesignToCanvas = async (
 
   editor.canvas.discardActiveObject();
   editor.canvas.renderAll();
+};
+
+/** Reads the workspace size + colours out of a captured canvas JSON. */
+export const readCanvasPalette = (
+  template: Template
+): { width: number; height: number; background: string; text: string } => {
+  const fallback = {
+    width: LAYOUT_REFERENCE.width,
+    height: LAYOUT_REFERENCE.height,
+    background: template.style?.background || '#ffffff',
+    text: template.textConfig?.houseName?.color || '#000000',
+  };
+
+  if (!template.canvasJson) return fallback;
+
+  try {
+    const parsed = JSON.parse(template.canvasJson) as {
+      background?: string;
+      objects?: { name?: string; type?: string; width?: number; height?: number; fill?: string }[];
+    };
+
+    const workspace = parsed.objects?.find((o) => o.name === 'clip');
+    const text = parsed.objects?.find((o) => isTextType(o.type) && o.fill);
+
+    return {
+      width: workspace?.width || fallback.width,
+      height: workspace?.height || fallback.height,
+      background: parsed.background || workspace?.fill || fallback.background,
+      text: text?.fill || fallback.text,
+    };
+  } catch {
+    return fallback;
+  }
 };

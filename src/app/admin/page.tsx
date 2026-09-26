@@ -44,6 +44,7 @@ import {
   Truck,
   Copy,
   Plus,
+  Palette,
   Pencil,
   Trash2
 } from 'lucide-react';
@@ -780,17 +781,26 @@ function AdminMain() {
                 Templates Catalog Management ({templates.length})
               </h3>
               <p className="text-xs text-neutral-500">
-                Create new templates, duplicate designs, toggle visibility, and update prices.
+                Design templates on the canvas, add colour versions and sizes, then publish.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={handleCreateTemplate}
-              className="px-4 py-2 bg-[#0073ff] hover:bg-[#0059cc] text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm self-start sm:self-auto cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Create New Template</span>
-            </button>
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={handleCreateTemplate}
+                className="px-4 py-2 bg-white border border-neutral-200 hover:bg-neutral-100 text-neutral-700 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Quick create</span>
+              </button>
+              <Link
+                href="/admin/design"
+                className="px-4 py-2 bg-[#0073ff] hover:bg-[#0059cc] text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
+              >
+                <Palette className="w-4 h-4" />
+                <span>Design in canvas</span>
+              </Link>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -832,11 +842,18 @@ function AdminMain() {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
+                  <Link
+                    href={`/admin/design?designId=${encodeURIComponent(tpl.id)}`}
+                    title="Open in canvas designer"
+                    className="p-2 rounded-lg text-xs font-bold transition-all border border-neutral-200 hover:bg-neutral-100 text-neutral-600"
+                  >
+                    <Palette className="w-3.5 h-3.5" />
+                  </Link>
                   <button
                     type="button"
-                    title="Edit Design"
+                    title="Edit details, colours and sizes"
                     onClick={() => handleEditTemplate(tpl)}
-                    className="p-2 rounded-xl text-xs font-bold transition-all border border-neutral-200 hover:bg-neutral-100 text-neutral-600 dark:border-neutral-800 dark:hover:bg-zinc-800 dark:text-neutral-300"
+                    className="p-2 rounded-lg text-xs font-bold transition-all border border-neutral-200 hover:bg-neutral-100 text-neutral-600 dark:border-neutral-800 dark:hover:bg-zinc-800 dark:text-neutral-300"
                   >
                     <Pencil className="w-3.5 h-3.5" />
                   </button>

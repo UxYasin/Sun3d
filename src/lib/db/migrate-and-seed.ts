@@ -37,9 +37,9 @@ async function migrateAndSeed() {
         `INSERT INTO public.templates (
           id, name, category, supported_sizes, thumbnail, description, material,
           price_starting_at, badge, enabled, style, text_config, editable_fields, default_values,
-          sizes, variants, layout
+          sizes, variants, layout, canvas_json, palette
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
-          $15, $16, $17)
+          $15, $16, $17, $18, $19)
         ON CONFLICT (id) DO UPDATE SET
           name = EXCLUDED.name,
           category = EXCLUDED.category,
@@ -54,6 +54,8 @@ async function migrateAndSeed() {
           sizes = EXCLUDED.sizes,
           variants = EXCLUDED.variants,
           layout = EXCLUDED.layout,
+          canvas_json = EXCLUDED.canvas_json,
+          palette = EXCLUDED.palette,
           updated_at = NOW();`,
         [
           design.id,
@@ -72,7 +74,9 @@ async function migrateAndSeed() {
           JSON.stringify(design.defaultValues),
           JSON.stringify(design.sizes || []),
           JSON.stringify(design.variants || []),
-          JSON.stringify(design.layout || [])
+          JSON.stringify(design.layout || []),
+          design.canvasJson ? JSON.stringify(JSON.parse(design.canvasJson)) : null,
+          design.palette ? JSON.stringify(design.palette) : null
         ]
       );
     }

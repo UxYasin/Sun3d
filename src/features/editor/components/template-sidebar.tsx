@@ -54,13 +54,22 @@ const DesignCard = ({ design, onApply }: DesignCardProps) => {
   return (
     <div className="rounded-xl border border-neutral-200 overflow-hidden bg-white">
       <div className="p-2">
-        <NameplatePreview
-          template={design}
-          variantId={variantId}
-          size={preview.id as NameplateSize}
-          customValues={{ customSize }}
-          compact
-        />
+        {design.canvasJson && design.thumbnail ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={design.thumbnail}
+            alt={design.name}
+            className="w-full rounded-md border border-neutral-200 object-cover"
+          />
+        ) : (
+          <NameplatePreview
+            template={design}
+            variantId={variantId}
+            size={preview.id as NameplateSize}
+            customValues={{ customSize }}
+            compact
+          />
+        )}
       </div>
 
       <div className="px-2.5 pb-2.5 space-y-2">

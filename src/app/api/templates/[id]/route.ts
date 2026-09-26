@@ -26,6 +26,8 @@ export async function PATCH(
       sizes: 'sizes',
       variants: 'variants',
       layout: 'layout',
+      canvasJson: 'canvas_json',
+      palette: 'palette',
     };
 
     // Columns holding structured data rather than scalars.
@@ -36,6 +38,8 @@ export async function PATCH(
       'sizes',
       'variants',
       'layout',
+      'canvasJson',
+      'palette',
     ]);
 
     const updates: string[] = [];

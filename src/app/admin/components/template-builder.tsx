@@ -20,6 +20,8 @@ interface TemplateBuilderProps {
   initial?: Template;
   onSave: (template: Template) => void;
   onClose: () => void;
+  /** Optional summary shown in the footer, e.g. "3 sizes × 3 colours". */
+  footerNote?: string;
 }
 
 const CATEGORIES = [
@@ -42,7 +44,10 @@ const inputClass =
   'w-full h-9 px-2.5 rounded-lg border border-neutral-200 text-xs text-neutral-900 focus:outline-none focus:ring-1 focus:ring-[#0073ff]';
 const labelClass = 'text-[11px] font-semibold text-neutral-600';
 
-const createBlankDesign = (): Template => {
+const variantFor = (id: string, variants: TemplateVariant[]) =>
+  variants.find((variant) => variant.id === id) || variants[0];
+
+export const createBlankDesign = (): Template => {
   const base: Template = {
     id: `tpl-${Date.now()}`,
     name: 'নতুন ডিজাইন',
@@ -128,6 +133,7 @@ export const TemplateBuilder = ({
   initial,
   onSave,
   onClose,
+  footerNote,
 }: TemplateBuilderProps) => {
   const [draft, setDraft] = useState<Template>(
     () => initial || createBlankDesign()
@@ -535,7 +541,18 @@ export const TemplateBuilder = ({
               </div>
             </section>
 
-            {/* Text lines */}
+            {/* Text lines — canvas-authored designs carry their own layout */}
+            {draft.canvasJson ? (
+              <section className="space-y-2 pt-4 border-t">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
+                  Canvas design
+                </h4>
+                <p className="text-[11px] text-neutral-500 leading-relaxed">
+                  এই ডিজাইনটি ক্যানভাস এডিটরে আঁকা। লেআউট ক্যানভাস থেকেই আসে —
+                  এখানে শুধু সাইজ ও কালার ভার্সন ঠিক করুন।
+                </p>
+              </section>
+            ) : (
             <section className="space-y-3 pt-4 border-t">
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
@@ -613,6 +630,7 @@ export const TemplateBuilder = ({
                 ))}
               </div>
             </section>
+            )}
           </div>
 
           {/* Live preview */}
@@ -621,11 +639,38 @@ export const TemplateBuilder = ({
               Live preview
             </h4>
 
-            <NameplatePreview
-              template={draft}
-              variantId={previewVariantId}
-              size={previewSize.id as NameplateSize}
-            />
+            {draft.canvasJson ? (
+              <div className="space-y-2">
+                {draft.thumbnail ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={draft.thumbnail}
+                    alt={draft.name}
+                    className="w-full rounded-md border object-cover"
+                  />
+                ) : (
+                  <div
+                    className="w-full rounded-md border flex items-center justify-center text-[11px] text-neutral-400"
+                    style={{
+                      aspectRatio: `${previewSize.width} / ${previewSize.height}`,
+                      backgroundColor:
+                        variantFor(previewVariantId, variants)?.background,
+                    }}
+                  >
+                    No thumbnail
+                  </div>
+                )}
+                <p className="text-[10px] text-neutral-400">
+                  ক্যানভাস থেকে সংরক্ষিত প্রিভিউ
+                </p>
+              </div>
+            ) : (
+              <NameplatePreview
+                template={draft}
+                variantId={previewVariantId}
+                size={previewSize.id as NameplateSize}
+              />
+            )}
 
             <div className="space-y-2">
               <label className={labelClass}>Preview size</label>
@@ -678,6 +723,11 @@ export const TemplateBuilder = ({
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-2 px-6 py-4 border-t bg-white">
+          {footerNote && (
+            <span className="mr-auto text-[11px] font-semibold text-muted-foreground">
+              {footerNote}
+            </span>
+          )}
           <button
             type="button"
             onClick={onClose}

@@ -33,6 +33,12 @@ export interface TemplateVariant {
   thumbnail?: string;
 }
 
+export interface PaletteColors {
+  background: string;
+  text: string;
+  accent?: string;
+}
+
 /** One text layer the design places on the canvas. */
 export interface DesignTextLayer {
   key: string;
@@ -129,8 +135,12 @@ export interface Template {
   sizes?: SizeOption[];
   /** Colour versions of this design. */
   variants?: TemplateVariant[];
-  /** How the design is composed on the canvas. */
+  /** How the design is composed on the canvas (form-built designs). */
   layout?: DesignTextLayer[];
+  /** Full Fabric canvas JSON, for designs drawn in the canvas editor. */
+  canvasJson?: string;
+  /** The colours the canvas was authored with, so variants can recolour it. */
+  palette?: PaletteColors;
   createdAt: string;
 }
 

@@ -2,18 +2,7 @@ import { fabric } from "fabric";
 import { ITextboxOptions } from "fabric/fabric-impl";
 import * as material from "material-colors";
 
-export const JSON_KEYS = [
-  "name",
-  "gradientAngle",
-  "selectable",
-  "hasControls",
-  "linkData",
-  "editable",
-  "extensionType",
-  "extension",
-  "bevelEmbossConfig",
-  "originalUnicodeText"
-];
+export { JSON_KEYS } from "@/features/editor/json-keys";
 
 export const filters = [
   "none",

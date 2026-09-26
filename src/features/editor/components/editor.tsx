@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { 
   ActiveTool, 
+  Editor as EditorInstance,
   selectionDependentTools
 } from "@/features/editor/types";
 import { Navbar } from "@/features/editor/components/navbar";
@@ -40,9 +41,11 @@ interface EditorProps {
   };
   onSave?: (values: { json: string; height: number; width: number }) => void;
   onOrder?: () => void;
+  /** Hands the editor instance out so callers can read the canvas on demand. */
+  onReady?: (editor: EditorInstance) => void;
 };
 
-export const Editor = ({ initialData, onSave, onOrder }: EditorProps) => {
+export const Editor = ({ initialData, onSave, onOrder, onReady }: EditorProps) => {
   const [isSaving, setIsSaving] = useState(false);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -116,6 +119,12 @@ export const Editor = ({ initialData, onSave, onOrder }: EditorProps) => {
       canvas.dispose();
     };
   }, [init]);
+
+  useEffect(() => {
+    if (editor && onReady) {
+      onReady(editor);
+    }
+  }, [editor, onReady]);
 
   return (
     <div className="h-full flex flex-col">

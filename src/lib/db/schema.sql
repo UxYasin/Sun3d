@@ -34,6 +34,8 @@ CREATE TABLE IF NOT EXISTS public.templates (
   sizes JSONB NOT NULL DEFAULT '[]'::jsonb,
   variants JSONB NOT NULL DEFAULT '[]'::jsonb,
   layout JSONB NOT NULL DEFAULT '[]'::jsonb,
+  canvas_json JSONB,
+  palette JSONB,
   editable_fields TEXT[] NOT NULL DEFAULT ARRAY['houseName', 'proprietor', 'address', 'holdingNumber'],
   default_values JSONB NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -119,7 +121,9 @@ CREATE TABLE IF NOT EXISTS public.business_settings (
 ALTER TABLE public.templates
   ADD COLUMN IF NOT EXISTS sizes JSONB NOT NULL DEFAULT '[]'::jsonb,
   ADD COLUMN IF NOT EXISTS variants JSONB NOT NULL DEFAULT '[]'::jsonb,
-  ADD COLUMN IF NOT EXISTS layout JSONB NOT NULL DEFAULT '[]'::jsonb;
+  ADD COLUMN IF NOT EXISTS layout JSONB NOT NULL DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS canvas_json JSONB,
+  ADD COLUMN IF NOT EXISTS palette JSONB;
 
 ALTER TABLE public.templates
   ALTER COLUMN supported_sizes SET DEFAULT ARRAY['2:1', '1:1', '4:1'];
