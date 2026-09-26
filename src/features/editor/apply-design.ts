@@ -119,13 +119,21 @@ const applyCanvasDesign = async (
   workspace.setPositionByOrigin(workspaceCenter, 'center', 'center');
   workspace.setCoords();
 
-  // Recolour for the chosen colour version.
+  // Recolour for the chosen colour version. Text the author gave a different
+  // colour on purpose is left alone, so multi-colour designs keep their
+  // variety — only the design's primary text colour is swapped.
+  const authoredText = template.palette?.text?.toLowerCase();
   workspace.set({ fill: variant.background });
-  canvas.getObjects().forEach((object) => {
+
+  canvas.getObjects().forEach((raw) => {
+    const object = raw as unknown as CanvasObjectLike & { fill?: unknown };
     if (object.name === 'clip') return;
-    if (isTextType(object.type)) {
-      object.set({ fill: variant.textColor });
-    }
+    if (!isTextType(object.type)) return;
+
+    const fill = typeof object.fill === 'string' ? object.fill.toLowerCase() : undefined;
+    if (authoredText && fill && fill !== authoredText) return;
+
+    object.set({ fill: variant.textColor });
   });
 
   canvas.backgroundColor = variant.background;
