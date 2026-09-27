@@ -236,8 +236,10 @@ export const applyDesignToCanvas = async (
       fontFamily: layer.fontFamily,
       fontWeight: layer.fontWeight,
       fill: layerFill(layer, variant),
-      scaleX: layer.scaleX,
-      scaleY: layer.scaleY,
+      // Never write a null/undefined scale — Fabric turns it into 0, which
+      // collapses the object's cache canvas and breaks rendering on reload.
+      scaleX: layer.scaleX ?? 1,
+      scaleY: layer.scaleY ?? 1,
     });
   });
 

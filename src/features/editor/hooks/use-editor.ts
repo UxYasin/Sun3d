@@ -41,6 +41,8 @@ import {
   installBevelEmbossRenderer,
   normalizeBevelConfig,
 } from "@/features/editor/bevel-emboss";
+import { installCanvasGuards } from "@/features/editor/canvas-guards";
+import { parseCanvasJson } from "@/features/editor/canvas-json";
 
 const buildEditor = ({
   save,
@@ -119,7 +121,7 @@ const buildEditor = ({
   };
 
   const loadJson = (json: string) => {
-    const data = JSON.parse(json);
+    const data = parseCanvasJson(json);
 
     canvas.loadFromJSON(data, () => {
       autoZoom();
@@ -876,6 +878,7 @@ export const useEditor = ({
       initialContainer: HTMLDivElement;
     }) => {
       installBevelEmbossRenderer();
+      installCanvasGuards();
 
       fabric.Object.prototype.set({
         cornerColor: "#FFF",
