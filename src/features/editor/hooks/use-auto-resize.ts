@@ -13,6 +13,11 @@ export const useAutoResize = ({ canvas, container }: UseAutoResizeProps) => {
     const width = container.offsetWidth;
     const height = container.offsetHeight;
 
+    // A container that is still collapsed (hidden panel, first paint, a layout
+    // transition) would otherwise shrink the canvas to zero - which blanks the
+    // artwork and makes drawImage throw for any thumbnail capture.
+    if (width <= 0 || height <= 0) return;
+
     canvas.setWidth(width);
     canvas.setHeight(height);
 

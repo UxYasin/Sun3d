@@ -41,19 +41,29 @@ const captureThumbnail = () => {
     "canvas.lower-canvas"
   ) as HTMLCanvasElement | null;
 
-  if (!source || !source.width) return "";
+  // A canvas that has not been laid out yet is 0-wide *or* 0-high, and
+  // drawImage throws on either. Skip the thumbnail rather than failing the save.
+  if (!source || !source.width || !source.height) return "";
 
-  const width = 480;
-  const height = Math.max(1, Math.round((source.height / source.width) * width));
-  const offscreen = document.createElement("canvas");
-  offscreen.width = width;
-  offscreen.height = height;
+  try {
+    const width = 480;
+    const height = Math.max(
+      1,
+      Math.round((source.height / source.width) * width)
+    );
+    const offscreen = document.createElement("canvas");
+    offscreen.width = width;
+    offscreen.height = height;
 
-  const ctx = offscreen.getContext("2d");
-  if (!ctx) return "";
+    const ctx = offscreen.getContext("2d");
+    if (!ctx) return "";
 
-  ctx.drawImage(source, 0, 0, width, height);
-  return offscreen.toDataURL("image/jpeg", 0.75);
+    ctx.drawImage(source, 0, 0, width, height);
+    return offscreen.toDataURL("image/jpeg", 0.75);
+  } catch (err) {
+    console.warn("Thumbnail capture failed:", err);
+    return "";
+  }
 };
 
 const AdminDesigner = () => {
