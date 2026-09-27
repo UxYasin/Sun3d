@@ -6,6 +6,7 @@ import type {
   TemplateVariant,
 } from '@/types/nameplate';
 import {
+  getTemplateArtwork,
   getTemplateLayout,
   getVariant,
   layerFill,
@@ -79,9 +80,11 @@ const applyCanvasDesign = async (
   editor: Editor,
   template: Template,
   size: SizeOption,
-  variant: TemplateVariant
+  variant: TemplateVariant,
+  artwork: string,
+  recolour: boolean
 ) => {
-  await loadCanvasJson(editor, template.canvasJson!);
+  await loadCanvasJson(editor, artwork);
 
   const canvas = editor.canvas;
   const workspace = findWorkspace(editor) as unknown as WorkspaceLike | undefined;
@@ -119,24 +122,28 @@ const applyCanvasDesign = async (
   workspace.setPositionByOrigin(workspaceCenter, 'center', 'center');
   workspace.setCoords();
 
-  // Recolour for the chosen colour version. Text the author gave a different
-  // colour on purpose is left alone, so multi-colour designs keep their
-  // variety — only the design's primary text colour is swapped.
-  const authoredText = template.palette?.text?.toLowerCase();
-  workspace.set({ fill: variant.background });
+  // Artwork the author drew for this exact colour is used as-is; only the
+  // shared base artwork gets recoloured for the variant. Text the author gave
+  // a different colour on purpose is left alone either way, so multi-colour
+  // designs keep their variety.
+  if (recolour) {
+    const authoredText = template.palette?.text?.toLowerCase();
+    workspace.set({ fill: variant.background });
 
-  canvas.getObjects().forEach((raw) => {
-    const object = raw as unknown as CanvasObjectLike & { fill?: unknown };
-    if (object.name === 'clip') return;
-    if (!isTextType(object.type)) return;
+    canvas.getObjects().forEach((raw) => {
+      const object = raw as unknown as CanvasObjectLike & { fill?: unknown };
+      if (object.name === 'clip') return;
+      if (!isTextType(object.type)) return;
 
-    const fill = typeof object.fill === 'string' ? object.fill.toLowerCase() : undefined;
-    if (authoredText && fill && fill !== authoredText) return;
+      const fill =
+        typeof object.fill === 'string' ? object.fill.toLowerCase() : undefined;
+      if (authoredText && fill && fill !== authoredText) return;
 
-    object.set({ fill: variant.textColor });
-  });
+      object.set({ fill: variant.textColor });
+    });
 
-  canvas.backgroundColor = variant.background;
+    canvas.backgroundColor = variant.background;
+  }
   canvas.discardActiveObject();
   canvas.renderAll();
 };
@@ -175,8 +182,19 @@ export const applyDesignToCanvas = async (
 
   editor.changeBackground(variant.background);
 
-  if (template.canvasJson) {
-    await applyCanvasDesign(editor, template, size, variant);
+  // A design drawn in the canvas editor may hold a separate artwork for this
+  // exact colour x size; otherwise the shared base artwork is reused.
+  const artwork = getTemplateArtwork(template, variant?.id, size.id);
+
+  if (artwork) {
+    await applyCanvasDesign(
+      editor,
+      template,
+      size,
+      variant,
+      artwork,
+      artwork === template.canvasJson
+    );
     return;
   }
 
