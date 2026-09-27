@@ -3,12 +3,17 @@
 import React, { useState } from 'react';
 import { Template, NameplateSize } from '@/types/nameplate';
 import { NameplatePreview } from '@/components/nameplate/NameplatePreview';
+import { getTemplateVariants } from '@/lib/template-utils';
 
 interface TemplateDetailModalProps {
   template: Template | null;
   isOpen: boolean;
   onClose: () => void;
-  onCustomize: (template: Template, size: NameplateSize) => void;
+  onCustomize: (
+    template: Template,
+    variantId: string | undefined,
+    size: NameplateSize
+  ) => void;
 }
 
 export function TemplateDetailModal({
@@ -17,9 +22,14 @@ export function TemplateDetailModal({
   onClose,
   onCustomize
 }: TemplateDetailModalProps) {
+  const [selectedVariantId, setSelectedVariantId] = useState<string | undefined>(undefined);
   const [selectedSize, setSelectedSize] = useState<NameplateSize>('2:1');
 
   if (!isOpen || !template) return null;
+
+  const variants = getTemplateVariants(template);
+  const activeVariant = variants.find((v) => v.id === selectedVariantId) || variants[0];
+  const previewThumbnail = activeVariant?.thumbnail || template.thumbnail;
 
   const activeSize = template.supportedSizes.includes(selectedSize)
     ? selectedSize
@@ -43,10 +53,10 @@ export function TemplateDetailModal({
         {/* Left Side: Large Preview (Matching Canva Screenshot 4) */}
         <div className="md:w-7/12 bg-[#f8f9fa] p-6 sm:p-10 flex items-center justify-center border-b md:border-b-0 md:border-r border-neutral-100">
           <div className="w-full max-w-md">
-            {template.thumbnail ? (
+            {previewThumbnail ? (
               <div className="relative w-full aspect-[2/1] rounded-2xl overflow-hidden shadow-lg border border-neutral-200 bg-neutral-900">
                 <img
-                  src={template.thumbnail}
+                  src={previewThumbnail}
                   alt={template.name}
                   className="w-full h-full object-cover"
                 />
@@ -100,7 +110,32 @@ export function TemplateDetailModal({
               {template.description}
             </p>
 
-            {/* Size Selector */}
+            {/* Colour Mode — step 1 of the onboarding */}
+            {variants.length > 1 && (
+              <div className="mt-6">
+                <label className="block text-xs font-semibold text-neutral-700 mb-2">
+                  রঙ মোড নির্বাচন করুন:
+                </label>
+                <div className="flex gap-2">
+                  {variants.map((variant) => (
+                    <button
+                      key={variant.id}
+                      type="button"
+                      title={variant.name}
+                      onClick={() => setSelectedVariantId(variant.id)}
+                      className={`size-8 rounded-full transition-all cursor-pointer ${
+                        activeVariant?.id === variant.id
+                          ? 'ring-2 ring-[#0073ff] ring-offset-2'
+                          : 'ring-1 ring-neutral-300 hover:ring-neutral-400'
+                      }`}
+                      style={{ backgroundColor: variant.background }}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Size Selector — step 2 */}
             <div className="mt-6">
               <label className="block text-xs font-semibold text-neutral-700 mb-2">
                 সাইজ বা রেশিও নির্বাচন করুন:
@@ -133,7 +168,7 @@ export function TemplateDetailModal({
           {/* Action CTA Button (Canva Screenshot 4) */}
           <div className="mt-8">
             <button
-              onClick={() => onCustomize(template, activeSize)}
+              onClick={() => onCustomize(template, activeVariant?.id, activeSize)}
               className="w-full btn-canva-pill btn-canva-primary py-3 text-base font-bold transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
             >
               Customize free template • ডিজাইন শুরু করুন

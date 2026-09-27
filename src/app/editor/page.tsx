@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useState, useEffect } from 'react';
+import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 
@@ -17,7 +17,9 @@ const Editor = dynamic(
   }
 );
 import { MOCK_TEMPLATES } from '@/data/mock-templates';
-import { resolveSize } from '@/lib/template-utils';
+import { getTemplateArtwork, resolveSize } from '@/lib/template-utils';
+import { applyDesignToCanvas } from '@/features/editor/apply-design';
+import type { Editor as EditorInstance } from '@/features/editor/types';
 import { OrderReviewModal } from '@/components/editor/OrderReviewModal';
 import { PaymentInstructionsModal } from '@/components/orders/PaymentInstructionsModal';
 import { useAuth } from '@/lib/auth-context';
@@ -33,7 +35,9 @@ function CanvasEditorPageContent() {
   const queryTemplateId = searchParams.get('templateId');
   const querySize = searchParams.get('size') as NameplateSize | null;
   const queryDesignId = searchParams.get('designId');
+  const queryVariant = searchParams.get('variant');
 
+  const editorRef = useRef<EditorInstance | null>(null);
   const [activeTemplate, setActiveTemplate] = useState<Template>(MOCK_TEMPLATES[0]);
   const [activeCreatedOrder, setActiveCreatedOrder] = useState<CustomerOrder | null>(null);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
@@ -98,7 +102,11 @@ function CanvasEditorPageContent() {
       }
     }
 
-    const found = MOCK_TEMPLATES.find((t) => t.id === resolvedTemplateId) || MOCK_TEMPLATES[0];
+    // DB-authored designs live in the synced store; mocks are the fallback.
+    const found =
+      MOCK_TEMPLATES.find((t) => t.id === resolvedTemplateId) ||
+      OrderStoreService.getAdminTemplates().find((t) => t.id === resolvedTemplateId) ||
+      MOCK_TEMPLATES[0];
     setActiveTemplate(found);
 
     const safeSize = resolvedSize && found.supportedSizes.includes(resolvedSize) ? resolvedSize : (found.supportedSizes[0] || '2:1');
@@ -150,6 +158,25 @@ function CanvasEditorPageContent() {
     }
   };
 
+  // The onboarding picked a colour + size — load that combination's artwork.
+  const handleEditorReady = useCallback(
+    (editor: EditorInstance) => {
+      editorRef.current = editor;
+      if (!queryTemplateId && !queryVariant && !querySize) return;
+
+      const artwork = getTemplateArtwork(activeTemplate, queryVariant, querySize);
+      void applyDesignToCanvas(
+        editor,
+        artwork ? { ...activeTemplate, canvasJson: artwork } : activeTemplate,
+        {
+          variantId: queryVariant || undefined,
+          sizeId: (querySize || designState.size) as string,
+        }
+      );
+    },
+    [activeTemplate, queryTemplateId, queryVariant, querySize, designState.size]
+  );
+
   const activeSize = resolveSize(
     activeTemplate,
     designState.size,
@@ -166,6 +193,7 @@ function CanvasEditorPageContent() {
         }}
         onSave={handleSaveCanvas}
         onOrder={handleOrderClick}
+        onReady={handleEditorReady}
       />
 
       {/* Order Review Modal */}

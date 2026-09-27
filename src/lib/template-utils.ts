@@ -61,6 +61,18 @@ export const resolveSize = (
   return sizes.find((s) => s.id === wanted) || sizes[0] || STANDARD_SIZES[0];
 };
 
+/** Stable key for a colour×size artwork inside `Template.artworks`. */
+export const artworkKey = (variantId?: string | null, sizeId?: string | null) =>
+  `${variantId || 'default'}::${sizeId || 'default'}`;
+
+/** The artwork saved for a colour×size combination, falling back to the base. */
+export const getTemplateArtwork = (
+  template: Template,
+  variantId?: string | null,
+  sizeId?: string | null
+): string | undefined =>
+  template.artworks?.[artworkKey(variantId, sizeId)] || template.canvasJson;
+
 export const getTemplateVariants = (template: Template): TemplateVariant[] => {
   const variants = (template.variants || []).filter((v) => v && v.id);
   if (variants.length) return variants;
@@ -205,4 +217,87 @@ export const normalizeTemplate = (template: Template): Template => {
     variants,
     layout: getTemplateLayout({ ...template, variants }),
   };
+};
+
+/** A ready-to-edit design the canvas editor can start from. */
+export const createBlankDesign = (): Template => {
+  const base: Template = {
+    id: `tpl-${Date.now()}`,
+    name: 'নতুন ডিজাইন',
+    category: 'Royal Brass & Slate',
+    supportedSizes: STANDARD_SIZES.map((s) => s.id) as NameplateSize[],
+    sizes: STANDARD_SIZES,
+    thumbnail: '',
+    description: '',
+    material: 'প্রিমিয়াম এক্রিলিক + ৩ডি মেটালিক লেটারিং',
+    priceStartingAt: 3250,
+    badge: 'New',
+    enabled: true,
+    style: {
+      background: '#006d03',
+      borderColor: '#d4af37',
+      borderWidth: '0px',
+      borderRadius: '8px',
+      standoffScrewType: 'gold-cap',
+      accentLineColor: '#ffde59',
+      materialFinish: 'gloss',
+    },
+    textConfig: {
+      houseName: {
+        fontFamily: 'SutonnyMJ',
+        fontSizeClass: 'text-4xl',
+        fontWeight: 'bold',
+        color: '#ffd054',
+      },
+      proprietor: {
+        fontFamily: 'SutonnyMJ',
+        fontSizeClass: 'text-2xl',
+        fontWeight: 'normal',
+        color: '#ffdd78',
+      },
+      address: {
+        fontFamily: 'SutonnyMJ',
+        fontSizeClass: 'text-sm',
+        color: '#ffea9f',
+      },
+      holdingNumber: {
+        fontFamily: 'SutonnyMJ',
+        fontSizeClass: 'text-base',
+        color: '#ffd054',
+      },
+    },
+    editableFields: ['houseName', 'proprietor', 'address', 'holdingNumber'],
+    defaultValues: {
+      houseName: 'mvwgDj nvmvb feb',
+      proprietor: '†cªvt kvn Avjg',
+      address: 'Mªvgt `wonvBigviv, ivqcyiv, biwms`x|',
+      holdingNumber: 'wemwgj­vwni ivngvwbi ivwng',
+    },
+    variants: [
+      {
+        id: 'v1',
+        name: 'ভার্সন ১ (Emerald)',
+        background: '#006d03',
+        textColor: '#ffd054',
+        accentColor: '#ffde59',
+      },
+      {
+        id: 'v2',
+        name: 'ভার্সন ২ (Ruby)',
+        background: '#4b0004',
+        textColor: '#ffd054',
+        accentColor: '#ffde59',
+      },
+      {
+        id: 'v3',
+        name: 'ভার্সন ৩ (Obsidian)',
+        background: '#000000',
+        textColor: '#ffd054',
+        accentColor: '#ffde59',
+      },
+    ],
+    createdAt: new Date().toISOString(),
+  };
+
+  return normalizeTemplate(base);
 };

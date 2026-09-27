@@ -163,12 +163,20 @@ export function unicodeToBijoy(srcString: string): string {
   }
 
   str = str.replace(/(^|[\s(])‡/g, '$1†');
+
+  // The Bijoy tables encode the ল-half-form (as in ল্ল, গ্ল, প্ল, ব্ল…) with
+  // U+00AD SOFT HYPHEN, but browsers never paint a soft hyphen, so the conjunct
+  // silently lost its second element. SutonnyMJ maps U+2212 to the same glyph
+  // (gid 135) and it does render, so emit that instead.
+  str = str.replace(/\u00AD/g, '\u2212');
+
   return str;
 }
 
 export function bijoyToUnicode(srcString: string): string {
   if (!srcString) return '';
-  let str = srcString;
+  // Fold our printable alias back to the soft hyphen the tables expect.
+  let str = srcString.replace(/\u2212/g, '\u00AD');
 
   // Reverse mapping from Bijoy ANSI back to Unicode
   // Sort by key length descending to match longest ANSI clusters first

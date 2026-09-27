@@ -6,6 +6,7 @@ import { Check } from "lucide-react";
 import { ActiveTool, Editor } from "@/features/editor/types";
 import { NameplateSize, Template } from "@/types/nameplate";
 import {
+  getTemplateArtwork,
   getTemplateSizes,
   getTemplateVariants,
   normalizeTemplate,
@@ -25,10 +26,12 @@ interface TemplateSidebarProps {
   editor: Editor | undefined;
   activeTool: ActiveTool;
   onChangeActiveTool: (tool: ActiveTool) => void;
+  adminMode?: boolean;
 }
 
 interface DesignCardProps {
   design: Template;
+  actionLabel: string;
   onApply: (options: {
     sizeId: string;
     variantId: string;
@@ -36,7 +39,7 @@ interface DesignCardProps {
   }) => void;
 }
 
-const DesignCard = ({ design, onApply }: DesignCardProps) => {
+const DesignCard = ({ design, actionLabel, onApply }: DesignCardProps) => {
   const sizes = getTemplateSizes(design);
   const variants = getTemplateVariants(design);
 
@@ -169,7 +172,7 @@ const DesignCard = ({ design, onApply }: DesignCardProps) => {
           onClick={() => onApply({ sizeId, variantId, customSize })}
           className="w-full h-8 rounded-lg bg-[#0073ff] hover:bg-[#0059cc] text-white text-[11px] font-bold transition"
         >
-          Apply to canvas
+          {actionLabel}
         </button>
       </div>
     </div>
@@ -180,6 +183,7 @@ export const TemplateSidebar = ({
   editor,
   activeTool,
   onChangeActiveTool,
+  adminMode,
 }: TemplateSidebarProps) => {
   // The editor is client-only, so reading the store during the first render is
   // safe and avoids a setState-in-effect round trip.
@@ -190,8 +194,10 @@ export const TemplateSidebar = ({
   );
 
   const [ConfirmDialog, confirm] = useConfirm(
-    "টেমপ্লেট পরিবর্তন নিশ্চিত করুন",
-    "বর্তমান ক্যানভাসে এই ডিজাইনটি লোড করতে চান?"
+    adminMode ? "টেমপ্লেট এডিট নিশ্চিত করুন" : "টেমপ্লেট পরিবর্তন নিশ্চিত করুন",
+    adminMode
+      ? "এই টেমপ্লেটটি এডিট করতে ক্যানভাসে লোড করবেন? বর্তমান ক্যানভাস প্রতিস্থাপিত হবে।"
+      : "বর্তমান ক্যানভাসে এই ডিজাইনটি লোড করতে চান?"
   );
 
   const onClose = () => {
@@ -211,7 +217,13 @@ export const TemplateSidebar = ({
     const ok = await confirm();
     if (!ok) return;
 
-    await applyDesignToCanvas(editor, design, options);
+    // Each colour×size combination can carry its own saved artwork.
+    const artwork = getTemplateArtwork(design, options.variantId, options.sizeId);
+    await applyDesignToCanvas(
+      editor,
+      artwork ? { ...design, canvasJson: artwork } : design,
+      options
+    );
   };
 
   return (
@@ -224,7 +236,11 @@ export const TemplateSidebar = ({
       <ConfirmDialog />
       <ToolSidebarHeader
         title="ডিজাইন লাইব্রেরি"
-        description="সাইজ ও কালার ভার্সন বেছে নিয়ে ক্যানভাসে লোড করুন"
+        description={
+          adminMode
+            ? "এডিট করতে টেমপ্লেট বেছে ক্যানভাসে লোড করুন"
+            : "সাইজ ও কালার ভার্সন বেছে নিয়ে ক্যানভাসে লোড করুন"
+        }
       />
       <ScrollArea>
         <div className="p-3 space-y-3">
@@ -237,6 +253,7 @@ export const TemplateSidebar = ({
             <DesignCard
               key={design.id}
               design={design}
+              actionLabel={adminMode ? "Edit Template" : "Apply to canvas"}
               onApply={(options) => onApply(design, options)}
             />
           ))}

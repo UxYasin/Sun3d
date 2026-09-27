@@ -30,21 +30,27 @@ export default function HomePage() {
 
   const handleHeroSelectTemplate = (templateId: string) => {
     const tpl = MOCK_TEMPLATES.find((t) => t.id === templateId) || MOCK_TEMPLATES[0];
-    handleStartCustomization(tpl, tpl.supportedSizes[0] || '2:1');
+    handleStartCustomization(tpl, undefined, tpl.supportedSizes[0] || '2:1');
   };
 
-  const handleStartCustomization = (template: Template, size: NameplateSize) => {
+  const handleStartCustomization = (
+    template: Template,
+    variantId: string | undefined,
+    size: NameplateSize
+  ) => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('sun3d_selected_template_id', template.id);
+      localStorage.setItem('sun3d_selected_variant', variantId || '');
       localStorage.setItem('sun3d_selected_size', size);
     }
 
+    const variantQuery = variantId ? `&variant=${encodeURIComponent(variantId)}` : '';
     setSelectedForCustomization({ template, size });
 
     if (user) {
-      router.push(`/editor?templateId=${template.id}&size=${size}`);
+      router.push(`/editor?templateId=${template.id}&size=${size}${variantQuery}`);
     } else {
-      router.push(`/login?redirect=/editor&templateId=${template.id}&size=${size}`);
+      router.push(`/login?redirect=/editor?templateId=${template.id}%26size=${size}${variantQuery}`);
     }
   };
 

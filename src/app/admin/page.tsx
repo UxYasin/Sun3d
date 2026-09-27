@@ -16,13 +16,12 @@ import {
 } from '@/types/nameplate';
 import { MOCK_TEMPLATES, SIZE_LABELS } from '@/data/mock-templates';
 import { NameplatePreview } from '@/components/nameplate/NameplatePreview';
-import { TemplateBuilder } from '@/app/admin/components/template-builder';
+import { DesignCard } from '@/app/admin/components/design-card';
 import {
   AdminSidebar,
   AdminTopbar,
   type AdminTab
 } from '@/app/admin/components/admin-shell';
-import { getTemplateSizes, getTemplateVariants } from '@/lib/template-utils';
 import {
   Shield,
   Search,
@@ -42,11 +41,7 @@ import {
   Sliders,
   DollarSign,
   Truck,
-  Copy,
-  Plus,
-  Palette,
-  Pencil,
-  Trash2
+  Palette
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -74,9 +69,6 @@ function AdminMain() {
 
   // Toast / Notification banner
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [builder, setBuilder] = useState<{ open: boolean; template?: Template }>({
-    open: false
-  });
   const [navOpen, setNavOpen] = useState(false);
 
   // Apply the saved colour scheme. DOM-only, so no cascading render.
@@ -191,26 +183,6 @@ function AdminMain() {
       setTemplates(updated);
       showToast('Template removed from system.');
     }
-  };
-
-  const handleCreateTemplate = () => {
-    setBuilder({ open: true, template: undefined });
-  };
-
-  const handleEditTemplate = (template: Template) => {
-    setBuilder({ open: true, template });
-  };
-
-  const handleSaveTemplate = (template: Template) => {
-    const exists = templates.some((t) => t.id === template.id);
-
-    const updated = exists
-      ? OrderStoreService.updateTemplate(template.id, template)
-      : OrderStoreService.createTemplate(template);
-
-    setTemplates(updated);
-    setBuilder({ open: false });
-    showToast(exists ? 'Design updated.' : 'New design created!');
   };
 
   const handleSavePaymentSettings = (e: React.FormEvent) => {
@@ -785,108 +757,25 @@ function AdminMain() {
               </p>
             </div>
             <div className="flex items-center gap-2 self-start sm:self-auto">
-              <button
-                type="button"
-                onClick={handleCreateTemplate}
-                className="px-4 py-2 bg-white border border-neutral-200 hover:bg-neutral-100 text-neutral-700 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Quick create</span>
-              </button>
               <Link
                 href="/admin/design"
                 className="px-4 py-2 bg-[#0073ff] hover:bg-[#0059cc] text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
               >
                 <Palette className="w-4 h-4" />
-                <span>Design in canvas</span>
+                <span>New design in canvas</span>
               </Link>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
             {templates.map((tpl) => (
-              <div
+              <DesignCard
                 key={tpl.id}
-                className="bg-white dark:bg-zinc-900 p-5 rounded-lg border border-neutral-200 dark:border-neutral-800 shadow-none flex items-center justify-between gap-4"
-              >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-bold text-sm text-neutral-900 dark:text-white">
-                      {tpl.name}
-                    </h4>
-                    {tpl.badge && (
-                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#0073ff] text-white">
-                        {tpl.badge}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-neutral-500 mt-0.5">
-                    {tpl.category} • {tpl.material}
-                  </p>
-                  <p className="text-[11px] font-mono text-neutral-400 mt-1">
-                    Sizes: {getTemplateSizes(tpl).map((s) => s.label).join(', ')} • Price: ৳{tpl.priceStartingAt.toLocaleString()}
-                  </p>
-                  <div className="flex items-center gap-1.5 mt-1.5">
-                    {getTemplateVariants(tpl).map((variant) => (
-                      <span
-                        key={variant.id}
-                        title={variant.name}
-                        className="size-4 rounded-full border border-neutral-300"
-                        style={{ backgroundColor: variant.background }}
-                      />
-                    ))}
-                    <span className="text-[10px] text-neutral-400 ml-1">
-                      {getTemplateVariants(tpl).length} colour version(s)
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  <Link
-                    href={`/admin/design?designId=${encodeURIComponent(tpl.id)}`}
-                    title="Open in canvas designer"
-                    className="p-2 rounded-lg text-xs font-bold transition-all border border-neutral-200 hover:bg-neutral-100 text-neutral-600"
-                  >
-                    <Palette className="w-3.5 h-3.5" />
-                  </Link>
-                  <button
-                    type="button"
-                    title="Edit details, colours and sizes"
-                    onClick={() => handleEditTemplate(tpl)}
-                    className="p-2 rounded-lg text-xs font-bold transition-all border border-neutral-200 hover:bg-neutral-100 text-neutral-600 dark:border-neutral-800 dark:hover:bg-zinc-800 dark:text-neutral-300"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    title="Duplicate Template"
-                    onClick={() => handleDuplicateTemplate(tpl.id)}
-                    className="p-2 rounded-xl text-xs font-bold transition-all border border-neutral-200 hover:bg-neutral-100 text-neutral-600 dark:border-neutral-800 dark:hover:bg-zinc-800 dark:text-neutral-300"
-                  >
-                    <Copy className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleToggleTemplate(tpl.id)}
-                    className={cn(
-                      'px-3 py-1.5 rounded-xl text-xs font-bold transition-all border',
-                      tpl.enabled !== false
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300'
-                        : 'bg-neutral-100 text-neutral-500 border-neutral-200'
-                    )}
-                  >
-                    {tpl.enabled !== false ? 'Enabled' : 'Disabled'}
-                  </button>
-                  <button
-                    type="button"
-                    title="Delete Template"
-                    onClick={() => handleDeleteTemplate(tpl.id)}
-                    className="p-2 rounded-xl text-xs font-bold transition-all border border-red-200 hover:bg-red-50 text-red-600 dark:border-red-950/50 dark:hover:bg-red-950/30"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
+                template={tpl}
+                onDuplicate={handleDuplicateTemplate}
+                onToggle={handleToggleTemplate}
+                onDelete={handleDeleteTemplate}
+              />
             ))}
           </div>
         </div>
@@ -1233,14 +1122,6 @@ function AdminMain() {
           </div>
         </main>
       </div>
-
-      {builder.open && (
-        <TemplateBuilder
-          initial={builder.template}
-          onSave={handleSaveTemplate}
-          onClose={() => setBuilder({ open: false })}
-        />
-      )}
     </div>
   );
 }

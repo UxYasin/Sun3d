@@ -139,6 +139,12 @@ export interface Template {
   layout?: DesignTextLayer[];
   /** Full Fabric canvas JSON, for designs drawn in the canvas editor. */
   canvasJson?: string;
+  /**
+   * Per colour+size artwork, keyed `${variantId}::${sizeId}`. A template is one
+   * file that holds every combination; the top-level canvasJson stays the base
+   * artwork for the default combination.
+   */
+  artworks?: Record<string, string>;
   /** The colours the canvas was authored with, so variants can recolour it. */
   palette?: PaletteColors;
   createdAt: string;

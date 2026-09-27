@@ -43,9 +43,11 @@ interface EditorProps {
   onOrder?: () => void;
   /** Hands the editor instance out so callers can read the canvas on demand. */
   onReady?: (editor: EditorInstance) => void;
+  /** Admin authors a template rather than applying one, so wording differs. */
+  adminMode?: boolean;
 };
 
-export const Editor = ({ initialData, onSave, onOrder, onReady }: EditorProps) => {
+export const Editor = ({ initialData, onSave, onOrder, onReady, adminMode }: EditorProps) => {
   const [isSaving, setIsSaving] = useState(false);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -185,6 +187,7 @@ export const Editor = ({ initialData, onSave, onOrder, onReady }: EditorProps) =
           editor={editor}
           activeTool={activeTool}
           onChangeActiveTool={onChangeActiveTool}
+          adminMode={adminMode}
         />
         <FilterSidebar
           editor={editor}

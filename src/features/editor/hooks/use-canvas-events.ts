@@ -1,6 +1,7 @@
 import { fabric } from "fabric";
 import { useEffect } from "react";
 import { hasBanglaUnicode, isSutonnyFont, unicodeToBijoy } from "../bangla-converter";
+import { fitTextboxToContent } from "../text-frame";
 
 interface UseCanvasEventsProps {
   save: () => void;
@@ -25,11 +26,17 @@ export const useCanvasEvents = ({
         if (target && target.type === "textbox") {
           const currentFont = target.get("fontFamily");
           const currentText = target.get("text") || "";
-          
-          if (isSutonnyFont(currentFont) && hasBanglaUnicode(currentText)) {
+
+          if (hasBanglaUnicode(currentText)) {
             // Save cursor position if currently editing
             const cursorStart = (target as any).selectionStart;
             const cursorEnd = (target as any).selectionEnd;
+
+            // Bengali only shapes correctly in SutonnyMJ (ANSI/Bijoy), so switch
+            // the box over before converting the Unicode the user typed.
+            if (!isSutonnyFont(currentFont)) {
+              target.set({ fontFamily: "SutonnyMJ" });
+            }
 
             const converted = unicodeToBijoy(currentText);
             (target as any).originalUnicodeText = currentText;
@@ -43,6 +50,10 @@ export const useCanvasEvents = ({
             
             canvas.renderAll();
           }
+
+          // Follow the text as it is typed so the frame stays snug.
+          fitTextboxToContent(target);
+          canvas.renderAll();
         }
         save();
       });
@@ -63,6 +74,7 @@ export const useCanvasEvents = ({
         canvas.off("object:added");
         canvas.off("object:removed");
         canvas.off("object:modified");
+        canvas.off("text:changed");
         canvas.off("selection:created");
         canvas.off("selection:updated");
         canvas.off("selection:cleared");

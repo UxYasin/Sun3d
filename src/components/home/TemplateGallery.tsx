@@ -8,7 +8,11 @@ import { TemplateDetailModal } from '@/components/home/TemplateDetailModal';
 import { Search } from 'lucide-react';
 
 interface TemplateGalleryProps {
-  onStartCustomization: (template: Template, size: NameplateSize) => void;
+  onStartCustomization: (
+    template: Template,
+    variantId: string | undefined,
+    size: NameplateSize
+  ) => void;
 }
 
 export function TemplateGallery({ onStartCustomization }: TemplateGalleryProps) {
@@ -53,14 +57,18 @@ export function TemplateGallery({ onStartCustomization }: TemplateGalleryProps) 
     setIsDetailOpen(true);
   };
 
-  const handleModalCustomize = (template: Template, size: NameplateSize) => {
+  const handleModalCustomize = (
+    template: Template,
+    variantId: string | undefined,
+    size: NameplateSize
+  ) => {
     setIsDetailOpen(false);
-    onStartCustomization(template, size);
+    onStartCustomization(template, variantId, size);
   };
 
   const handleStartDesigningFast = () => {
     const defaultTemplate = MOCK_TEMPLATES[0];
-    onStartCustomization(defaultTemplate, '2:1');
+    onStartCustomization(defaultTemplate, undefined, '2:1');
   };
 
   return (

@@ -210,6 +210,40 @@ export const applyDesignToCanvas = async (
   editor.canvas.renderAll();
 };
 
+/**
+ * Recolours the live canvas in place — workspace fill plus any text currently
+ * painted with the design's primary colour. Used to snapshot a colour variation
+ * without rebuilding the canvas, so unsaved edits survive.
+ */
+export const recolourLiveCanvas = (
+  editor: Editor,
+  from: { background: string; text: string },
+  to: { background: string; text: string }
+) => {
+  const canvas = editor.canvas;
+  const fromText = from.text?.toLowerCase();
+
+  canvas.getObjects().forEach((raw) => {
+    const object = raw as unknown as CanvasObjectLike & { fill?: unknown };
+
+    if (object.name === 'clip') {
+      object.set({ fill: to.background });
+      return;
+    }
+
+    if (!isTextType(object.type)) return;
+
+    const fill = typeof object.fill === 'string' ? object.fill.toLowerCase() : undefined;
+    if (!fromText || !fill || fill !== fromText) return;
+
+    object.set({ fill: to.text });
+  });
+
+  canvas.backgroundColor = to.background;
+  canvas.discardActiveObject();
+  canvas.renderAll();
+};
+
 /** Reads the workspace size + colours out of a captured canvas JSON. */
 export const readCanvasPalette = (
   template: Template

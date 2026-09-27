@@ -32,6 +32,7 @@ export async function GET() {
           : r.canvas_json
             ? JSON.stringify(r.canvas_json)
             : undefined,
+      artworks: typeof r.artworks === 'string' ? JSON.parse(r.artworks) : r.artworks || undefined,
       palette: typeof r.palette === 'string' ? JSON.parse(r.palette) : r.palette || undefined,
       createdAt: r.created_at || new Date().toISOString()
     }));
@@ -52,10 +53,10 @@ export async function POST(request: Request) {
       INSERT INTO public.templates (
         id, name, category, supported_sizes, thumbnail, description, material,
         price_starting_at, badge, enabled, style, text_config, editable_fields, default_values,
-        sizes, variants, layout, canvas_json, palette, created_at, updated_at
+        sizes, variants, layout, canvas_json, palette, artworks, created_at, updated_at
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
-        $15, $16, $17, $18, $19, NOW(), NOW()
+        $15, $16, $17, $18, $19, $20, NOW(), NOW()
       )
       ON CONFLICT (id) DO UPDATE SET
         name = EXCLUDED.name,
@@ -76,6 +77,7 @@ export async function POST(request: Request) {
         layout = EXCLUDED.layout,
         canvas_json = EXCLUDED.canvas_json,
         palette = EXCLUDED.palette,
+        artworks = EXCLUDED.artworks,
         updated_at = NOW()
       RETURNING *;
     `;
@@ -100,6 +102,7 @@ export async function POST(request: Request) {
       JSON.stringify(tpl.layout || []),
       tpl.canvasJson ? JSON.stringify(JSON.parse(tpl.canvasJson)) : null,
       tpl.palette ? JSON.stringify(tpl.palette) : null,
+      JSON.stringify(tpl.artworks || {}),
     ];
 
     const rows = await query<any>(sql, values);

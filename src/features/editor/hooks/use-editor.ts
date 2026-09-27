@@ -34,6 +34,7 @@ import { useCanvasEvents } from "@/features/editor/hooks/use-canvas-events";
 import { useWindowEvents } from "@/features/editor/hooks/use-window-events";
 import { useLoadState } from "@/features/editor/hooks/use-load-state";
 import { hasBanglaUnicode, isSutonnyFont, isBanglaFont, isBijoyText, unicodeToBijoy } from "@/features/editor/bangla-converter";
+import { fitTextboxToContent } from "@/features/editor/text-frame";
 import {
   DEFAULT_BEVEL_EMBOSS,
   applyBevelEmboss,
@@ -264,7 +265,11 @@ const buildEditor = ({
       canvas.renderAll();
     },
     addText: (value, options) => {
-      const chosenFont = options?.fontFamily || fontFamily;
+      // Bengali needs SutonnyMJ (ANSI/Bijoy); typing Unicode in any other font
+      // would fall back glyph-by-glyph and break the conjuncts.
+      const chosenFont =
+        options?.fontFamily ||
+        (hasBanglaUnicode(value) ? "SutonnyMJ" : fontFamily);
       let textValue = value;
       if (isSutonnyFont(chosenFont) && hasBanglaUnicode(textValue)) {
         textValue = unicodeToBijoy(textValue);
@@ -278,6 +283,9 @@ const buildEditor = ({
         fill: fillColor,
         ...options,
       });
+
+      // Keep the frame hugging the text so it is easy to grab and resize.
+      fitTextboxToContent(object);
 
       if (isBangla) {
         // Bevel & Emboss shades the glyphs itself, so no fabric drop shadow.
