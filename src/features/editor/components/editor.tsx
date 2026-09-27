@@ -122,10 +122,18 @@ export const Editor = ({ initialData, onSave, onOrder, onReady, adminMode }: Edi
     };
   }, [init]);
 
+  // Hand the editor out once per canvas instance. `editor` is rebuilt whenever
+  // the selection changes, so without this guard callers that react to onReady
+  // (by composing a design onto the canvas) would re-run on every selection
+  // change and loop forever.
+  const readyCanvas = useRef<unknown>(null);
+
   useEffect(() => {
-    if (editor && onReady) {
-      onReady(editor);
-    }
+    const instance = editor?.canvas;
+    if (!instance || !onReady || readyCanvas.current === instance) return;
+
+    readyCanvas.current = instance;
+    onReady(editor!);
   }, [editor, onReady]);
 
   return (
