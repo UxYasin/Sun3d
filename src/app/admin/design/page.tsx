@@ -1,37 +1,22 @@
 "use client";
 
-import {
-  Suspense,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, Check, Loader, Save } from "lucide-react";
 
-import type { SizeOption, Template, TemplateVariant } from "@/types/nameplate";
+import { STANDARD_SIZES, type SizeOption, type Template } from "@/types/nameplate";
 import type { Editor as EditorInstance } from "@/features/editor/types";
 import { JSON_KEYS } from "@/features/editor/json-keys";
-import {
-  artworkKey,
-  createBlankDesign,
-  getTemplateVariants,
-  normalizeTemplate,
-} from "@/lib/template-utils";
+import { createBlankDesign, normalizeTemplate } from "@/lib/template-utils";
 import {
   applyDesignToCanvas,
   readCanvasPalette,
-  recolourLiveCanvas,
+  resizeLiveCanvas,
 } from "@/features/editor/apply-design";
 import { Button } from "@/components/ui/button";
-import {
-  VariationPanel,
-  type NewColour,
-} from "@/app/admin/components/variation-panel";
+import { cn } from "@/lib/utils";
 
 const CanvasEditor = dynamic(
   () =>
@@ -85,8 +70,9 @@ const AdminDesigner = () => {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
-  const [activeColourId, setActiveColourId] = useState<string | null>(null);
-  const [activeSizeId, setActiveSizeId] = useState<string | null>(null);
+  const [activeSizeId, setActiveSizeId] = useState<string>(STANDARD_SIZES[0].id);
+  const [customWidth, setCustomWidth] = useState(1200);
+  const [customHeight, setCustomHeight] = useState(600);
 
   useEffect(() => {
     if (!designId) return; // new design, draft is already seeded
@@ -206,29 +192,13 @@ const AdminDesigner = () => {
   const saveDesign = async () => {
     if (!draft) return;
 
-    const palette = readCanvasPalette({ ...draft, canvasJson: readCanvas() });
     const snapshot = captureThumbnail();
-
-    // Save writes into the version currently loaded on the canvas.
-    const variants = (draft.variants || []).map((variant) =>
-      variant.id === activeColourId
-        ? {
-            ...variant,
-            background: palette.background,
-            textColor: palette.text,
-            thumbnail: snapshot || variant.thumbnail,
-          }
-        : variant
-    );
 
     const ok = await persist(
       withCanvas(draft, {
-        variants,
-        // The live canvas becomes the artwork of the active colour×size combo.
-        artworks: {
-          ...(draft.artworks || {}),
-          [artworkKey(activeColourId, activeSizeId)]: readCanvas(),
-        },
+        // Whatever the admin drew *is* the design. It keeps the standard
+        // ratios so it can be placed at any of them later.
+        sizes: draft.sizes?.length ? draft.sizes : STANDARD_SIZES,
         thumbnail: snapshot || draft.thumbnail,
       })
     );
@@ -240,154 +210,30 @@ const AdminDesigner = () => {
     }
   };
 
-  // --- COLOUR VARIATIONS ---
+  // --- SIZE / RATIO ---
 
-  /** Snapshot the design recoloured to `variant`, then restore the canvas. */
-  const captureVariantThumbnail = (variant: TemplateVariant) => {
+  /** Re-lay the whole design at `size`, keeping every element centred. */
+  const applySize = (size: SizeOption) => {
     const editor = editorRef.current;
-    if (!editor || !draft) return "";
+    if (!editor) return;
 
-    const palette = readCanvasPalette({ ...draft, canvasJson: readCanvas() });
-    const from = { background: palette.background, text: palette.text };
-    const to = { background: variant.background, text: variant.textColor };
-
-    recolourLiveCanvas(editor, from, to);
-    const thumbnail = captureThumbnail();
-    recolourLiveCanvas(editor, to, from);
-
-    return thumbnail;
-  };
-
-  /**
-   * Load a colour×size combination. Each combination keeps its own artwork, so
-   * switching loads the saved one; the first visit duplicates the current
-   * artwork into it (recoloured for colours, re-laid out for sizes).
-   */
-  const applyColour = (variant: TemplateVariant) => {
-    const editor = editorRef.current;
-    if (!editor || !draft) return;
-
-    const key = artworkKey(variant.id, activeSizeId);
-    const saved = draft.artworks?.[key];
-
-    if (saved) {
-      editor.loadJson(saved);
-      autosavedJson.current = saved;
-      setActiveColourId(variant.id);
-      return;
-    }
-
-    const palette = readCanvasPalette({ ...draft, canvasJson: readCanvas() });
-    recolourLiveCanvas(
-      editor,
-      { background: palette.background, text: palette.text },
-      { background: variant.background, text: variant.textColor }
-    );
-
-    const seeded = JSON.stringify(editor.canvas.toJSON(JSON_KEYS));
-    setDraft({
-      ...draft,
-      artworks: { ...(draft.artworks || {}), [key]: seeded },
-    });
-    autosavedJson.current = seeded;
-    setActiveColourId(variant.id);
-  };
-
-  const addColour = async (input: NewColour) => {
-    if (!draft) return;
-
-    const variant: TemplateVariant = {
-      id: `v-${Date.now()}`,
-      name: input.name,
-      background: input.background,
-      textColor: input.textColor,
-    };
-
-    const thumbnail = captureVariantThumbnail(variant);
-
-    await persist(
-      withCanvas(draft, {
-        thumbnail: draft.thumbnail || captureThumbnail(),
-        variants: [
-          ...(draft.variants || []),
-          thumbnail ? { ...variant, thumbnail } : variant,
-        ],
-      })
-    );
-
-    // Show the new colour on the canvas so it can be edited straight away.
-    applyColour(thumbnail ? { ...variant, thumbnail } : variant);
-  };
-
-  const removeColour = async (variantId: string) => {
-    if (!draft) return;
-    await persist(
-      withCanvas(draft, {
-        variants: (draft.variants || []).filter((v) => v.id !== variantId),
-      })
-    );
-  };
-
-  const selectColour = (variantId: string) => {
-    if (!draft) return;
-    const variant = getTemplateVariants(draft).find((v) => v.id === variantId);
-    if (variant) applyColour(variant);
-  };
-
-  // --- SIZE VARIATIONS ---
-
-  /** Re-lay the live design out at `size` and mark it as the version being edited. */
-  const applySize = async (size: SizeOption, sizes: SizeOption[]) => {
-    const editor = editorRef.current;
-    if (!editor || !draft) return;
-
-    const key = artworkKey(activeColourId, size.id);
-    const saved = draft.artworks?.[key];
-
-    if (saved) {
-      editor.loadJson(saved);
-      autosavedJson.current = saved;
-      setActiveSizeId(size.id);
-      return;
-    }
-
-    await applyDesignToCanvas(
-      editor,
-      { ...draft, canvasJson: readCanvas(), sizes },
-      { sizeId: size.id, variantId: activeColourId ?? undefined }
-    );
-
-    const seeded = JSON.stringify(editor.canvas.toJSON(JSON_KEYS));
-    setDraft({
-      ...draft,
-      artworks: { ...(draft.artworks || {}), [key]: seeded },
-    });
-    autosavedJson.current = seeded;
+    resizeLiveCanvas(editor, size);
     setActiveSizeId(size.id);
   };
 
-  const addSize = async (size: SizeOption) => {
-    if (!draft) return;
+  const chooseSize = (sizeId: string) => {
+    if (sizeId === "custom") {
+      applySize({
+        id: "custom",
+        label: `${customWidth}×${customHeight}`,
+        width: customWidth,
+        height: customHeight,
+      });
+      return;
+    }
 
-    const sizes = [...(draft.sizes || []), size].filter(
-      (s, i, all) => all.findIndex((x) => x.id === s.id) === i
-    );
-
-    await applySize(size, sizes);
-    await persist(withCanvas(draft, { sizes }));
-  };
-
-  const removeSize = async (sizeId: string) => {
-    if (!draft) return;
-    await persist(
-      withCanvas(draft, {
-        sizes: (draft.sizes || []).filter((s) => s.id !== sizeId),
-      })
-    );
-  };
-
-  const selectSize = (size: SizeOption) => {
-    void applySize(size, draft?.sizes || [size]);
+    const size = STANDARD_SIZES.find((item) => item.id === sizeId);
+    if (size) applySize(size);
   };
 
   if (!booted || !draft) {
@@ -410,22 +256,72 @@ const AdminDesigner = () => {
         adminMode
       />
 
-      <VariationPanel
-        template={draft}
-        busy={saving}
-        activeColourId={activeColourId}
-        activeSizeId={activeSizeId}
-        onAddColour={addColour}
-        onRemoveColour={removeColour}
-        onSelectColour={selectColour}
-        onAddSize={addSize}
-        onRemoveSize={removeSize}
-        onSelectSize={selectSize}
-      />
-
       {/* Admin actions — floated so the editor's own layout is untouched. */}
-      <div className="fixed bottom-6 right-6 z-[60] flex items-center gap-2 rounded-lg border bg-white p-2 shadow-md">
-        <span className="px-2 text-xs font-semibold text-muted-foreground max-w-[220px] truncate">
+      <div className="fixed bottom-6 right-6 z-[60] flex items-center gap-3 rounded-lg border bg-white px-3 py-2 shadow-md">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] font-semibold text-muted-foreground">
+            Size
+          </span>
+          {STANDARD_SIZES.map((size) => (
+            <button
+              key={size.id}
+              type="button"
+              onClick={() => chooseSize(size.id)}
+              className={cn(
+                "px-2.5 py-1 rounded-md border text-[11px] font-semibold transition-colors",
+                activeSizeId === size.id
+                  ? "border-[#0073ff] bg-[#f0f7ff] text-[#0073ff]"
+                  : "border-neutral-200 text-neutral-600 hover:bg-neutral-100"
+              )}
+            >
+              {size.label}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => chooseSize("custom")}
+            className={cn(
+              "px-2.5 py-1 rounded-md border text-[11px] font-semibold transition-colors",
+              activeSizeId === "custom"
+                ? "border-[#0073ff] bg-[#f0f7ff] text-[#0073ff]"
+                : "border-neutral-200 text-neutral-600 hover:bg-neutral-100"
+            )}
+          >
+            Custom
+          </button>
+          {activeSizeId === "custom" && (
+            <span className="flex items-center gap-1 text-[11px] text-neutral-500">
+              <input
+                type="number"
+                min={200}
+                max={4000}
+                value={customWidth}
+                onChange={(event) => setCustomWidth(Number(event.target.value))}
+                className="w-16 h-7 px-1.5 rounded border border-neutral-200 text-center"
+              />
+              ×
+              <input
+                type="number"
+                min={200}
+                max={4000}
+                value={customHeight}
+                onChange={(event) => setCustomHeight(Number(event.target.value))}
+                className="w-16 h-7 px-1.5 rounded border border-neutral-200 text-center"
+              />
+              <button
+                type="button"
+                onClick={() => chooseSize("custom")}
+                className="px-2 h-7 rounded border border-neutral-200 font-semibold hover:bg-neutral-100"
+              >
+                Apply
+              </button>
+            </span>
+          )}
+        </div>
+
+        <span className="h-6 w-px bg-neutral-200" />
+
+        <span className="px-1 text-xs font-semibold text-muted-foreground max-w-[200px] truncate">
           {existing || saved ? draft.name : "New design"}
         </span>
         {justSaved && (

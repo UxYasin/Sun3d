@@ -63,33 +63,18 @@ export const designSize = (
 const findWorkspace = (editor: Editor) =>
   editor.canvas.getObjects().find((object) => object.name === 'clip');
 
-const loadCanvasJson = (editor: Editor, json: string) =>
-  new Promise<void>((resolve, reject) => {
-    try {
-      editor.canvas.loadFromJSON(JSON.parse(json), () => resolve());
-    } catch (error) {
-      reject(error);
-    }
-  });
-
 /**
- * Loads a design that was drawn in the canvas editor, then scales it to the
- * chosen size (about the workspace centre) and recolours it for the variant.
+ * Scales whatever is on the canvas to a new plate ratio, keeping the artwork
+ * centred. Used by the designer's size control and when applying a design.
  */
-const applyCanvasDesign = async (
-  editor: Editor,
-  template: Template,
-  size: SizeOption,
-  variant: TemplateVariant,
-  artwork: string,
-  recolour: boolean
-) => {
-  await loadCanvasJson(editor, artwork);
-
+export const resizeLiveCanvas = (editor: Editor, size: SizeOption) => {
   const canvas = editor.canvas;
   const workspace = findWorkspace(editor) as unknown as WorkspaceLike | undefined;
 
-  if (!workspace) return;
+  if (!workspace) {
+    editor.changeSize({ width: size.width, height: size.height });
+    return;
+  }
 
   const authoredWidth = workspace.width || size.width;
   const authoredHeight = workspace.height || size.height;
@@ -121,6 +106,38 @@ const applyCanvasDesign = async (
   editor.changeSize({ width: size.width, height: size.height });
   workspace.setPositionByOrigin(workspaceCenter, 'center', 'center');
   workspace.setCoords();
+  canvas.renderAll();
+};
+
+const loadCanvasJson = (editor: Editor, json: string) =>
+  new Promise<void>((resolve, reject) => {
+    try {
+      editor.canvas.loadFromJSON(JSON.parse(json), () => resolve());
+    } catch (error) {
+      reject(error);
+    }
+  });
+
+/**
+ * Loads a design that was drawn in the canvas editor, then scales it to the
+ * chosen size (about the workspace centre) and recolours it for the variant.
+ */
+const applyCanvasDesign = async (
+  editor: Editor,
+  template: Template,
+  size: SizeOption,
+  variant: TemplateVariant,
+  artwork: string,
+  recolour: boolean
+) => {
+  await loadCanvasJson(editor, artwork);
+
+  const canvas = editor.canvas;
+  const workspace = findWorkspace(editor) as unknown as WorkspaceLike | undefined;
+
+  if (!workspace) return;
+
+  resizeLiveCanvas(editor, size);
 
   // Artwork the author drew for this exact colour is used as-is; only the
   // shared base artwork gets recoloured for the variant. Text the author gave
@@ -226,40 +243,6 @@ export const applyDesignToCanvas = async (
 
   editor.canvas.discardActiveObject();
   editor.canvas.renderAll();
-};
-
-/**
- * Recolours the live canvas in place — workspace fill plus any text currently
- * painted with the design's primary colour. Used to snapshot a colour variation
- * without rebuilding the canvas, so unsaved edits survive.
- */
-export const recolourLiveCanvas = (
-  editor: Editor,
-  from: { background: string; text: string },
-  to: { background: string; text: string }
-) => {
-  const canvas = editor.canvas;
-  const fromText = from.text?.toLowerCase();
-
-  canvas.getObjects().forEach((raw) => {
-    const object = raw as unknown as CanvasObjectLike & { fill?: unknown };
-
-    if (object.name === 'clip') {
-      object.set({ fill: to.background });
-      return;
-    }
-
-    if (!isTextType(object.type)) return;
-
-    const fill = typeof object.fill === 'string' ? object.fill.toLowerCase() : undefined;
-    if (!fromText || !fill || fill !== fromText) return;
-
-    object.set({ fill: to.text });
-  });
-
-  canvas.backgroundColor = to.background;
-  canvas.discardActiveObject();
-  canvas.renderAll();
 };
 
 /** Reads the workspace size + colours out of a captured canvas JSON. */
