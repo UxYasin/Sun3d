@@ -38,6 +38,7 @@ function CanvasEditorPageContent() {
   const queryVariant = searchParams.get('variant');
 
   const editorRef = useRef<EditorInstance | null>(null);
+  const signatureRef = useRef<string | null>(null);
   const [activeTemplate, setActiveTemplate] = useState<Template>(MOCK_TEMPLATES[0]);
   const [activeCreatedOrder, setActiveCreatedOrder] = useState<CustomerOrder | null>(null);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
@@ -61,6 +62,30 @@ function CanvasEditorPageContent() {
       accentColor: '#d4af37'
     }
   });
+
+  // The store ships seeded from the local mocks, so read it for the first paint
+  // and then refresh from the server. Without that refresh an admin's edit to a
+  // design never reaches this page.
+  const [templates, setTemplates] = useState<Template[]>(() => {
+    const stored = OrderStoreService.getAdminTemplates();
+    return stored.length > 0 ? stored : MOCK_TEMPLATES;
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    OrderStoreService.syncWithServer()
+      .then(() => {
+        if (cancelled) return;
+        const synced = OrderStoreService.getAdminTemplates();
+        if (synced.length > 0) setTemplates(synced);
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let resolvedTemplateId = queryTemplateId;
@@ -102,11 +127,19 @@ function CanvasEditorPageContent() {
       }
     }
 
-    // DB-authored designs live in the synced store; mocks are the fallback.
+    // Synced designs first; the bundled mocks are only a fallback.
     const found =
-      MOCK_TEMPLATES.find((t) => t.id === resolvedTemplateId) ||
-      OrderStoreService.getAdminTemplates().find((t) => t.id === resolvedTemplateId) ||
+      templates.find((t) => t.id === resolvedTemplateId) ||
+      templates[0] ||
       MOCK_TEMPLATES[0];
+
+    // The sync lands a moment after the first paint and re-runs this effect.
+    // Only adopt the template again if a *different* one resolved, so live
+    // edits aren't stomped.
+    const signature = `${found.id}|${found.canvasJson ? "canvas" : "layout"}`;
+    if (signatureRef.current === signature) return;
+    signatureRef.current = signature;
+
     setActiveTemplate(found);
 
     const safeSize = resolvedSize && found.supportedSizes.includes(resolvedSize) ? resolvedSize : (found.supportedSizes[0] || '2:1');
@@ -126,7 +159,7 @@ function CanvasEditorPageContent() {
         }
       }));
     }
-  }, [queryTemplateId, querySize, queryDesignId]);
+  }, [queryTemplateId, querySize, queryDesignId, templates]);
 
   const handleOrderClick = () => {
     if (!user) {

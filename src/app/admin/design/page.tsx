@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, Check, Loader, Save } from "lucide-react";
+import { ArrowLeft, Check, Loader, Save, TriangleAlert } from "lucide-react";
 
 import { STANDARD_SIZES, type SizeOption, type Template } from "@/types/nameplate";
 import type { Editor as EditorInstance } from "@/features/editor/types";
@@ -15,6 +15,7 @@ import {
   readCanvasPalette,
   resizeLiveCanvas,
 } from "@/features/editor/apply-design";
+import { OrderStoreService } from "@/lib/order-store";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -70,6 +71,7 @@ const AdminDesigner = () => {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
   const [activeSizeId, setActiveSizeId] = useState<string>(STANDARD_SIZES[0].id);
   const [customWidth, setCustomWidth] = useState(1200);
   const [customHeight, setCustomHeight] = useState(600);
@@ -168,7 +170,7 @@ const AdminDesigner = () => {
 
     try {
       // Await the write so a later list refresh can't read pre-save data.
-      await fetch(
+      const res = await fetch(
         isUpdate
           ? `/api/templates/${encodeURIComponent(template.id)}`
           : "/api/templates",
@@ -178,11 +180,26 @@ const AdminDesigner = () => {
           body: JSON.stringify(template),
         }
       );
+
+      // fetch only rejects on a network failure, so a rejected write has to be
+      // caught here — otherwise the editor claims "Saved" on a 4xx/5xx.
+      if (!res.ok) {
+        const detail = await res.text().catch(() => "");
+        throw new Error(`${res.status} ${detail.slice(0, 200)}`);
+      }
+
       setSaved(true);
       setDraft(template);
+      setSaveFailed(false);
+
+      // Refresh the local mirror the rest of the app reads from, so the saved
+      // design shows up in the editor without a reload.
+      await OrderStoreService.syncWithServer().catch(() => undefined);
+
       return true;
     } catch (err) {
       console.warn("Failed to save design:", err);
+      setSaveFailed(true);
       return false;
     } finally {
       setSaving(false);
@@ -328,6 +345,12 @@ const AdminDesigner = () => {
           <span className="flex items-center gap-1 px-1 text-[11px] font-semibold text-emerald-600">
             <Check className="size-3.5" />
             Saved
+          </span>
+        )}
+        {saveFailed && !justSaved && (
+          <span className="flex items-center gap-1 px-1 text-[11px] font-semibold text-red-600">
+            <TriangleAlert className="size-3.5" />
+            Save failed
           </span>
         )}
         <Button variant="ghost" size="sm" asChild className="gap-x-2">

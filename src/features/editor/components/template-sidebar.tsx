@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
 
 import { ActiveTool, Editor } from "@/features/editor/types";
@@ -38,6 +38,11 @@ interface DesignCardProps {
     customSize?: { width: number; height: number };
   }) => void;
 }
+
+const readDesigns = () =>
+  OrderStoreService.getAdminTemplates()
+    .filter((template) => template.enabled !== false)
+    .map(normalizeTemplate);
 
 const DesignCard = ({ design, actionLabel, onApply }: DesignCardProps) => {
   const sizes = getTemplateSizes(design);
@@ -186,12 +191,23 @@ export const TemplateSidebar = ({
   adminMode,
 }: TemplateSidebarProps) => {
   // The editor is client-only, so reading the store during the first render is
-  // safe and avoids a setState-in-effect round trip.
-  const [designs] = useState<Template[]>(() =>
-    OrderStoreService.getAdminTemplates()
-      .filter((template) => template.enabled !== false)
-      .map(normalizeTemplate)
-  );
+  // safe and avoids a setState-in-effect round trip. The store starts from the
+  // bundled mocks though, so refresh it — otherwise admin edits never show up.
+  const [designs, setDesigns] = useState<Template[]>(() => readDesigns());
+
+  useEffect(() => {
+    let cancelled = false;
+
+    OrderStoreService.syncWithServer()
+      .then(() => {
+        if (!cancelled) setDesigns(readDesigns());
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const [ConfirmDialog, confirm] = useConfirm(
     adminMode ? "টেমপ্লেট এডিট নিশ্চিত করুন" : "টেমপ্লেট পরিবর্তন নিশ্চিত করুন",
